@@ -1,8 +1,10 @@
-# Sliding Window Linear Regression Ensemble
+# 📈 Sliding Window Linear Regression Ensemble
 
 This method performs localized linear regression over a time series using a sliding window. It iteratively refines its focus on high-error regions based on prediction performance.
 
 ---
+
+Demo: [Google Colab](https://colab.research.google.com/drive/1jifMsj8nI_ZV-FL3ZScFP4wJJLQp97jH?usp=sharing)
 
 ## Problem Setup
 
@@ -89,6 +91,5 @@ Each iteration returns:
 
 ## Use Cases
 
-- Detecting local anomalies or non-stationarity  
+- Detecting local trend or non-stationarity  
 - Improving forecasting in regions where error is high  
-- Trend modeling for signal analysis
