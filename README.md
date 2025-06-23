@@ -4,6 +4,8 @@ This method performs localized linear regression over a time series using a slid
 
 ---
 
+Demo: [Google Colab](https://colab.research.google.com/drive/1jifMsj8nI_ZV-FL3ZScFP4wJJLQp97jH?usp=sharing)
+
 ## Problem Setup
 
 Given a univariate sequence:
