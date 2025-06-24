@@ -14,6 +14,23 @@ def split_by_gap(x, y):
         segments.append((list(xs), list(ys)))
     return segments
 
+def plot_multiple_lr(models, n=100):
+  X = np.arange(n).reshape(-1, 1)
+
+  plt.figure(figsize=(10, 6))
+
+  for i, model in enumerate(models):
+      y_pred = model.predict(X)
+      plt.plot(X, y_pred, label=f'Model {i+1}')
+
+  plt.xlabel("Time Step")
+  plt.ylabel("Prediction")
+  plt.title("Multiple Linear Regression Model Predictions Over Time")
+  plt.legend()
+  plt.grid(True)
+  plt.tight_layout()
+  plt.show()
+
 
 def plot_error(sequence, sliding_lr_output, window_size):
     sns.set(style="whitegrid", context="talk", palette="muted")
