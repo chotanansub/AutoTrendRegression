@@ -113,17 +113,3 @@ def train_sliding_lr_ensemble(
 
     print('\n[Done] Ensemble training complete.')
     return outputs
-
-
-
-
-
-def split_by_gap(x, y):
-    counter = iter(range(len(x)))
-    segments = []
-    for _, group in groupby(zip(x, y), key=lambda t: t[0] - next(counter)):
-        g = list(group)
-        xs, ys = zip(*g)
-        segments.append((list(xs), list(ys)))
-    return segments
-
