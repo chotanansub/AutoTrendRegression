@@ -2,6 +2,7 @@ import numpy as np
 from sklearn.linear_model import LinearRegression
 from typing import List, Tuple
 
+
 def extract_ranges(indices: List[int]) -> List[Tuple[int, int]]:
     """
     Convert a list of sorted indices into a list of continuous index ranges.
@@ -26,7 +27,7 @@ def extract_ranges(indices: List[int]) -> List[Tuple[int, int]]:
 
 def train_sliding_lr_ensemble(
     seq: np.ndarray,
-    num_models: int = 2,
+    max_models: int = 2,
     window_size: int = 5,
     error_percentile: int = 40,
     percentile_step: int = 5,
@@ -36,20 +37,20 @@ def train_sliding_lr_ensemble(
 
     Args:
         seq: The input sequence (1D array).
-        num_models: Number of refinement rounds.
+        max_models: Number of refinement rounds.
         window_size: Size of the training window for linear regression.
         error_percentile: Error threshold percentile to refine model focus.
 
     Returns:
         List of tuples: (predictions, filtered_errors, focus_ranges) for each iteration.
     """
-    outputs = []
+    models, process_logs = [], []
     seq_len = len(seq) - 1
     all_errors = np.zeros(seq_len)
     focus_windows = [(i, i + window_size) for i in range(seq_len - window_size)]
 
-    for iteration in range(num_models):
-        print(f'\n[Iteration {iteration + 1}/{num_models}]')
+    for iteration in range(max_models):
+        print(f'\n[Iteration {iteration + 1}/{max_models}]')
 
         #=============== (1) Determine Focus Windows Based on High-Error Ranges
 
@@ -100,7 +101,7 @@ def train_sliding_lr_ensemble(
             all_errors[t] = error
             predictions.append(yt_hat)
             errors.append(error)
-        
+
         #=============== (4) Identify High-Error Indices for Next Iteration
 
         threshold_value = np.percentile(all_errors, error_percentile)
@@ -109,7 +110,9 @@ def train_sliding_lr_ensemble(
         high_error_indices = np.where(all_errors > threshold_value)[0]
         filtered_errors = [err if err > threshold_value else 0 for err in errors]
 
-        outputs.append((predictions, filtered_errors, focus_ranges))
+        models.append(model)
+        process_logs.append( (predictions, filtered_errors, focus_ranges) ) 
+        
 
     print('\n[Done] Ensemble training complete.')
-    return outputs
+    return (models, process_logs)
