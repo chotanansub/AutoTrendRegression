@@ -14,7 +14,7 @@ def split_by_gap(x, y):
         segments.append((list(xs), list(ys)))
     return segments
 
-def new_plot_multiple_lr(models, n=100):
+def plot_multiple_lr(models, n=100):
     sns.set(style="whitegrid", context="talk", palette="muted")
 
     X = np.arange(n).reshape(-1, 1)
