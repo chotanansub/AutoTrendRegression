@@ -14,22 +14,39 @@ def split_by_gap(x, y):
         segments.append((list(xs), list(ys)))
     return segments
 
-def plot_multiple_lr(models, n=100):
-  X = np.arange(n).reshape(-1, 1)
+def new_plot_multiple_lr(models, n=100):
+    sns.set(style="whitegrid", context="talk", palette="muted")
 
-  plt.figure(figsize=(10, 6))
+    X = np.arange(n).reshape(-1, 1)
+    x_vals = np.arange(n)
 
-  for i, model in enumerate(models):
-      y_pred = model.predict(X)
-      plt.plot(X, y_pred, label=f'Model {i+1}')
+    fig, ax = plt.subplots(figsize=(6, 6))
+    ax.set_title("Multiple Linear Regression Model Predictions", fontsize=18)
 
-  plt.xlabel("Time Step")
-  plt.ylabel("Prediction")
-  plt.title("Multiple Linear Regression Model Predictions Over Time")
-  plt.legend()
-  plt.grid(True)
-  plt.tight_layout()
-  plt.show()
+    palette = sns.color_palette("muted", len(models))
+
+    for i, (model, color) in enumerate(zip(models, palette)):
+        y_pred = model.predict(X)
+
+        # Plot the prediction line up to the 2nd last point
+        ax.plot(x_vals[:-1], y_pred[:-1], label=f'Model {i+1}', linewidth=2.5, color=color, zorder=2)
+
+        # Add arrow at the end
+        ax.annotate(
+            '', 
+            xy=(x_vals[-1], y_pred[-1]), 
+            xytext=(x_vals[-2], y_pred[-2]),
+            arrowprops=dict(arrowstyle="->", color=color, lw=2),
+            zorder=3
+        )
+
+    ax.set_xlabel("Time Step", fontsize=14)
+    ax.set_ylabel("Prediction", fontsize=14)
+    ax.grid(True, linestyle='--', linewidth=0.5, alpha=0.6)
+    ax.legend(fontsize=12)
+    sns.despine()
+    plt.tight_layout()
+    plt.show()
 
 
 def plot_error(sequence, sliding_lr_output, window_size):
