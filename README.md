@@ -1,11 +1,13 @@
 # 📈 Sliding Window Linear Regression Ensemble
 
+#### 🚀 Demo: [Google Colab](https://colab.research.google.com/drive/1jifMsj8nI_ZV-FL3ZScFP4wJJLQp97jH?usp=sharing)
+
+
+
+
 This method performs localized linear regression over a time series using a sliding window. It iteratively refines its focus on high-error regions based on prediction performance.
 
 ---
-
-Demo: [Google Colab](https://colab.research.google.com/drive/1jifMsj8nI_ZV-FL3ZScFP4wJJLQp97jH?usp=sharing)
-
 
 
 ## Problem Setup
