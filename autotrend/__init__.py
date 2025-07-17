@@ -1,3 +1,3 @@
-from .sliding_linear import *
+from .local_linear_trend import *
 from .plot  import *
 from .gen_data import *
