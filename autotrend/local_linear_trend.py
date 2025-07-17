@@ -30,7 +30,7 @@ def decompose_llt(
     seq_len = len(seq)
     focus_targets = [i + window_size for i in range(seq_len - window_size)]
 
-    trend_marks = np.full(seq_len, np.nan)
+    trend_marks = np.concatenate([np.ones(window_size), np.full(seq_len - window_size, np.nan)])
 
     for iteration in range(max_models):
         print(f'\n[Iteration {iteration + 1}/{max_models}]')
