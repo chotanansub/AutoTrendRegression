@@ -3,51 +3,257 @@ import matplotlib.lines as mlines
 import matplotlib.patches as mpatches
 import seaborn as sns
 import numpy as np
-from itertools import groupby
+from .utility import split_by_gap
 
-def split_by_gap(x, y):
-    counter = iter(range(len(x)))
-    segments = []
-    for _, group in groupby(zip(x, y), key=lambda t: t[0] - next(counter)):
-        g = list(group)
-        xs, ys = zip(*g)
-        segments.append((list(xs), list(ys)))
-    return segments
-
-def plot_multiple_lr(models, n=100):
+def plot_error(sequence, sliding_lr_output, window_size):
     sns.set(style="whitegrid", context="talk", palette="muted")
 
-    X = np.arange(n).reshape(-1, 1)
-    x_vals = np.arange(n)
+    num_iterations = len(sliding_lr_output)
+    fig, axes = plt.subplots(
+        nrows=num_iterations * 2,  # Double the rows for main plot + error plot
+        ncols=1,
+        figsize=(14, 7 * num_iterations),  # Increased height multiplier from 6 to 7
+        sharex=True,
+        gridspec_kw={'height_ratios': [3, 1] * num_iterations}  # Main plot taller than error plot
+    )
+    if num_iterations == 1:
+        axes = [axes] if len(axes.shape) == 1 else axes.flatten()
+    else:
+        axes = axes.flatten()
 
-    fig, ax = plt.subplots(figsize=(6, 6))
-    ax.set_title("Multiple Linear Regression Model Predictions", fontsize=18)
+    # Move the title positioning and reduce font size slightly
+    fig.suptitle("Sliding Linear Regression Error", fontsize=18, y=0.99)
 
-    palette = sns.color_palette("muted", len(models))
+    for iteration, package in enumerate(sliding_lr_output):
+        predictions, absolute_errors, focused_ranges, high_error_flag, threshold_value = package
+        prediction_indices = [idx for r in focused_ranges for idx in range(r[0], r[1])]
 
-    for i, (model, color) in enumerate(zip(models, palette)):
-        y_pred = model.predict(X)
+        high_errors = [err if flag == 1 else 0 for err, flag in zip(absolute_errors, high_error_flag)]
+        low_errors = [err if flag == 0 else 0 for err, flag in zip(absolute_errors, high_error_flag)]
 
-        # Plot the prediction line up to the 2nd last point
-        ax.plot(x_vals[:-1], y_pred[:-1], label=f'Model {i+1}', linewidth=2.5, color=color, zorder=2)
+        if not prediction_indices:
+            continue  # skip empty plot
 
-        # Add arrow at the end
-        ax.annotate(
-            '', 
-            xy=(x_vals[-1], y_pred[-1]), 
-            xytext=(x_vals[-2], y_pred[-2]),
-            arrowprops=dict(arrowstyle="->", color=color, lw=2),
+        # Main plot (signal)
+        ax_main = axes[iteration * 2]
+        # Error plot
+        ax_error = axes[iteration * 2 + 1]
+
+        end_window = prediction_indices[0]
+        start_window = max(0, end_window - window_size)
+
+        # Plot training window
+        sns.lineplot(
+            x=np.arange(start_window, end_window),
+            y=sequence[start_window:end_window],
+            ax=ax_main,
+            color='royalblue',
+            linewidth=2.5,
             zorder=3
         )
 
-    ax.set_xlabel("Time Step", fontsize=14)
-    ax.set_ylabel("Prediction", fontsize=14)
-    ax.grid(True, linestyle='--', linewidth=0.5, alpha=0.6)
-    ax.legend(fontsize=12)
-    sns.despine()
-    plt.tight_layout()
-    plt.show()
+        # Highlight training window
+        ax_main.axvspan(
+            xmin=start_window,
+            xmax=end_window,
+            ymin=0,
+            ymax=1,
+            facecolor='cyan',
+            alpha=0.2,
+            zorder=0
+        )
 
+        # Plot full sequence
+        sns.lineplot(
+            x=np.arange(len(sequence)),
+            y=sequence,
+            ax=ax_main,
+            color='black',
+            linewidth=1.5,
+            alpha=1,
+            zorder=2
+        )
+
+        # Plot predictions
+        prediction_segments = split_by_gap(prediction_indices, predictions)
+        for xs, ys in prediction_segments:
+            sns.lineplot(
+                x=xs,
+                y=ys,
+                ax=ax_main,
+                color='purple',
+                linestyle='--',
+                linewidth=1.5,
+                alpha=0.7,
+                zorder=2
+            )
+
+        # Highlight evaluation areas with color based on error type - subdivided
+        for r in focused_ranges:
+            range_indices = list(range(r[0], r[1]))
+
+            # Get error flags for this range
+            range_error_flags = []
+            for idx in range_indices:
+                if idx in prediction_indices:
+                    pred_idx = prediction_indices.index(idx)
+                    range_error_flags.append(high_error_flag[pred_idx])
+                else:
+                    range_error_flags.append(None)  # No prediction for this index
+
+            # Group consecutive indices with same error type
+            current_start = r[0]
+            i = 0
+            while i < len(range_error_flags):
+                if range_error_flags[i] is not None:  # Only process indices with predictions
+                    current_error_type = range_error_flags[i]
+                    current_end = range_indices[i]
+
+                    # Find consecutive indices with same error type
+                    j = i + 1
+                    while j < len(range_error_flags) and range_error_flags[j] == current_error_type:
+                        current_end = range_indices[j]
+                        j += 1
+
+                    # Color based on error type
+                    if current_error_type == 1:  # High error
+                        facecolor = 'tomato'
+                        alpha = 0.15
+                    else:  # Low error
+                        facecolor = 'lightgreen'
+                        alpha = 0.15
+
+                    ax_main.axvspan(
+                        xmin=range_indices[i],
+                        xmax=current_end + 1,
+                        ymin=0,
+                        ymax=1,
+                        facecolor=facecolor,
+                        alpha=alpha,
+                        zorder=-1
+                    )
+
+                    i = j
+                else:
+                    i += 1
+
+        ax_main.set_title(f"Iteration: {iteration+1}", fontsize=16)
+        ax_main.set_ylabel("Value", fontsize=14)
+        ax_main.grid(True, linestyle='--', linewidth=0.5, alpha=0.6)
+
+        if len(prediction_indices) > 1:
+            min_gap = min(prediction_indices[i+1] - prediction_indices[i] for i in range(len(prediction_indices)-1))
+            bar_width = min(0.8, min_gap * 0.7)  # Adaptive width based on data density
+        else:
+            bar_width = 0.8
+
+        # Error subplot - vertical bar plot
+        # Create arrays for all indices with zero padding
+        all_errors_high = np.zeros(len(sequence))
+        all_errors_low = np.zeros(len(sequence))
+
+        # Fill in the actual errors at prediction indices
+        for i, idx in enumerate(prediction_indices):
+            all_errors_high[idx] = high_errors[i]
+            all_errors_low[idx] = low_errors[i]
+
+        # Plot error bars with fill colors
+        x_indices = np.arange(len(sequence))
+
+        # High errors (red) - with fill
+        high_mask = all_errors_high > 0
+        ax_error.bar(x_indices[high_mask], all_errors_high[high_mask],
+                    color='tomato', alpha=0.8, edgecolor='darkred', width=bar_width, label='High Error')
+
+        # Low errors (green) - with fill
+        low_mask = all_errors_low > 0
+        ax_error.bar(x_indices[low_mask], all_errors_low[low_mask],
+                    color='green', alpha=0.8, width=bar_width, edgecolor='darkgreen', label='Low Error')
+
+        # Add horizontal threshold line to error plot
+        ax_error.axhline(y=threshold_value, color='red', linestyle='--', 
+                        linewidth=1, alpha=0.7, zorder=5, label='Threshold')
+
+        # Highlight evaluation areas on error plot with same subdivision logic
+        for r in focused_ranges:
+            range_indices = list(range(r[0], r[1]))
+
+            # Get error flags for this range
+            range_error_flags = []
+            for idx in range_indices:
+                if idx in prediction_indices:
+                    pred_idx = prediction_indices.index(idx)
+                    range_error_flags.append(high_error_flag[pred_idx])
+                else:
+                    range_error_flags.append(None)  # No prediction for this index
+
+            # Group consecutive indices with same error type
+            current_start = r[0]
+            i = 0
+            while i < len(range_error_flags):
+                if range_error_flags[i] is not None:  # Only process indices with predictions
+                    current_error_type = range_error_flags[i]
+                    current_end = range_indices[i]
+
+                    # Find consecutive indices with same error type
+                    j = i + 1
+                    while j < len(range_error_flags) and range_error_flags[j] == current_error_type:
+                        current_end = range_indices[j]
+                        j += 1
+
+                    # Color based on error type
+                    if current_error_type == 1:  # High error
+                        facecolor = 'tomato'
+                        alpha = 0.15
+                    else:  # Low error
+                        facecolor = 'lightgreen'
+                        alpha = 0.15
+
+                    ax_error.axvspan(
+                        xmin=range_indices[i],
+                        xmax=current_end + 1,
+                        ymin=0,
+                        ymax=1,
+                        facecolor=facecolor,
+                        alpha=alpha,
+                        zorder=-1
+                    )
+
+                    i = j
+                else:
+                    i += 1
+
+        ax_error.set_ylabel("Error", fontsize=12)
+        ax_error.grid(True, linestyle='--', linewidth=0.5, alpha=0.6)
+
+        # Only show x-axis label on the last error subplot
+        if iteration == num_iterations - 1:
+            ax_error.set_xlabel("Time Index", fontsize=14)
+
+    # Define single global legend
+    legend_elements = [
+        mlines.Line2D([], [], color='royalblue', linewidth=2.5, label='Reference Window'),
+        mlines.Line2D([], [], color='purple', linewidth=2,linestyle='--', label='Reference Trend'),
+        mlines.Line2D([], [], color='black', linewidth=2, label='Observed Time Series'),
+        mpatches.Patch(color='lightgreen', alpha=0.15, label='Below Error Threshold Area'),
+        mpatches.Patch(color='tomato', alpha=0.15, label='Above Error Threshold Area'),
+        mpatches.Patch(color='tomato', alpha=0.8, label='Above Error Threshold Bars'),
+        mpatches.Patch(color='green', alpha=0.8, label='Below Error Threshold Bars'),
+        mlines.Line2D([], [], color='red', linewidth=2, linestyle='--', label='Threshold'),
+    ]
+    fig.legend(
+        handles=legend_elements,
+        loc='upper center',
+        ncol=4,  # Reduce columns from 7 to 4 for better spacing
+        bbox_to_anchor=(0.5, 0.97),  # Position legend right below title
+        fontsize=10
+    )
+
+    # Adjust the layout with minimal top margin
+    plt.tight_layout(rect=[0, 0.02, 1, 0.94])  # Bring plots very close to legend
+    plt.subplots_adjust(top=0.94)  # Additional adjustment to reduce top space
+    sns.despine()
+    plt.show()
 
 def plot_slope_comparison(models, x_range=(-5, 5), figsize=(14, 10)):
     sns.set(style="whitegrid", context="talk", palette="muted")
@@ -170,118 +376,6 @@ def plot_slope_comparison(models, x_range=(-5, 5), figsize=(14, 10)):
     plot_extended_lines(axes[1, 0])
     plot_half_circle(axes[1, 1])
 
-    plt.show()
-
-def plot_error(sequence, sliding_lr_output, window_size):
-    sns.set(style="whitegrid", context="talk", palette="muted")
-
-    num_iterations = len(sliding_lr_output)
-    fig, axes = plt.subplots(
-        nrows=num_iterations,
-        ncols=1,
-        figsize=(14, 5 * num_iterations),
-        sharex=True
-    )
-    if num_iterations == 1:
-        axes = [axes]
-
-    fig.suptitle("Sliding Linear Regression Error", fontsize=22, y=0.99)
-
-    for iteration, (package, ax) in enumerate(zip(sliding_lr_output, axes)):
-        predictions, absolute_errors, focused_ranges = package
-        prediction_indices = [idx for r in focused_ranges for idx in range(r[0], r[1])]
-
-        if not prediction_indices:
-            continue  # skip empty plot
-
-        end_window = prediction_indices[0]
-        start_window = max(0, end_window - window_size)
-
-        sns.lineplot(
-            x=np.arange(start_window, end_window),
-            y=sequence[start_window:end_window],
-            ax=ax,
-            color='royalblue',
-            linewidth=2.5,
-            zorder=3
-        )
-
-        ax.axvspan(
-            xmin=start_window,
-            xmax=end_window,
-            ymin=0,
-            ymax=1,
-            facecolor='cyan',
-            alpha=0.2,
-            zorder=0
-        )
-
-        sns.lineplot(
-            x=np.arange(len(sequence)),
-            y=sequence,
-            ax=ax,
-            color='green',
-            linewidth=2,
-            alpha=1,
-            zorder=2
-        )
-
-        prediction_segments = split_by_gap(prediction_indices, predictions)
-        for xs, ys in prediction_segments:
-            sns.lineplot(
-                x=xs,
-                y=ys,
-                ax=ax,
-                color='yellow',
-                linewidth=4,
-                alpha=0.7,
-                zorder=2
-            )
-
-        ax.errorbar(
-            prediction_indices,
-            [sequence[idx] for idx in prediction_indices],
-            yerr=absolute_errors,
-            ecolor='tomato',
-            linestyle='None',
-            alpha=0.6,
-            zorder=1
-        )
-
-        for r in focused_ranges:
-            ax.axvspan(
-                xmin=r[0],
-                xmax=r[1],
-                ymin=0,
-                ymax=1,
-                facecolor='gray',
-                alpha=0.2,
-                zorder=-1
-            )
-
-        ax.set_title(f"Iteration/Model: {iteration+1} ", fontsize=16)
-        ax.set_xlabel("Time Index", fontsize=14)
-        ax.set_ylabel("Value", fontsize=14)
-        ax.grid(True, linestyle='--', linewidth=0.5, alpha=0.6)
-
-    # Define single global legend
-    legend_elements = [
-        mlines.Line2D([], [], color='royalblue', linewidth=2.5, label='Initial Training Window'),
-        mlines.Line2D([], [], color='yellow', linewidth=4, label='Predict'),
-        mlines.Line2D([], [], color='green', linewidth=2, label='Observed Time Series'),
-        mpatches.Patch(color='gray', alpha=0.2, label='Eval Area'),
-        mlines.Line2D([], [], color='tomato', linewidth=2, linestyle='-', label='Prediction Error'),
-    ]
-    fig.legend(
-        handles=legend_elements,
-        loc='lower center',
-        ncol=5,
-        bbox_to_anchor=(0.5, -0.01),
-        fontsize=12
-    )
-
-    plt.tight_layout(rect=[0, 0.04, 1, 0.96])
-    sns.despine()
     plt.show()
 
 
