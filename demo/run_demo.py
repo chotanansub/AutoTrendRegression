@@ -1,86 +1,74 @@
-#!/usr/bin/env python3
 """
-Main demo runner for autotrend package.
-Runs all demos and exports logs + figures.
+Main demo runner for Local Linear Trend (LLT) examples.
 
-Usage:
-    python demos/run_demo.py
+This script runs all available demos in sequence.
 """
-import os
+
 import sys
-import logging
-from datetime import datetime
-from pathlib import Path
+import os
 
-# Add parent directory to path
+# Add parent directory to path to import autotrend
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-from demo_simple_wave import run_simple_wave_demo
-from demo_behavioral import run_behavioral_demo
-
-
-def setup_logging():
-    """Setup logging configuration"""
-    # Create output directories
-    log_dir = Path('outputs/logs')
-    fig_dir = Path('outputs/figures')
-    log_dir.mkdir(parents=True, exist_ok=True)
-    fig_dir.mkdir(parents=True, exist_ok=True)
-    
-    # Create timestamped log file
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    log_file = log_dir / f'demo_run_{timestamp}.log'
-    
-    # Configure logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s',
-        handlers=[
-            logging.FileHandler(log_file),
-            logging.StreamHandler(sys.stdout)
-        ]
-    )
-    
-    return log_file, timestamp
 
 
 def main():
-    """Run all demos"""
-    log_file, timestamp = setup_logging()
+    print("\n" + "=" * 80)
+    print(" " * 20 + "LOCAL LINEAR TREND (LLT) DEMOS")
+    print("=" * 80)
+    print("\nThis will run all available demos in sequence.")
+    print("Close each plot window to proceed to the next demo.")
+    print("\n" + "=" * 80 + "\n")
     
-    logging.info("="*80)
-    logging.info("AUTOTREND DEMO RUNNER")
-    logging.info("="*80)
-    logging.info(f"Timestamp: {timestamp}")
-    logging.info(f"Log file: {log_file}")
-    logging.info(f"Figures will be saved to: outputs/figures/")
-    logging.info("")
+    input("Press Enter to start...")
     
-    demos = [
-        ("Simple Wave Demo", run_simple_wave_demo),
-        ("Behavioral Sequence Demo", run_behavioral_demo),
-    ]
-    
-    for demo_name, demo_func in demos:
-        logging.info("="*80)
-        logging.info(f"Running: {demo_name}")
-        logging.info("="*80)
+    # ============================================================
+    # Demo 1: Simple Wave
+    # ============================================================
+    try:
+        print("\n" + "=" * 80)
+        print("DEMO 1: Simple Wave with Noise")
+        print("=" * 80)
         
-        try:
-            demo_func(timestamp)
-            logging.info(f"✓ {demo_name} completed successfully")
-        except Exception as e:
-            logging.error(f"✗ {demo_name} failed: {str(e)}")
-            import traceback
-            logging.error(traceback.format_exc())
+        from demo_simple_wave import main as run_simple_wave
+        run_simple_wave()
         
-        logging.info("")
+        print("\n✅ Demo 1 Complete!\n")
+        input("Press Enter to continue to Demo 2...")
+        
+    except Exception as e:
+        print(f"\n❌ Error in Demo 1: {e}")
+        import traceback
+        traceback.print_exc()
     
-    logging.info("="*80)
-    logging.info("ALL DEMOS COMPLETED")
-    logging.info("="*80)
-    logging.info(f"Check outputs/logs/{log_file.name} for full log")
-    logging.info(f"Check outputs/figures/ for generated plots")
+    # ============================================================
+    # Demo 2: Behavioral Sequence
+    # ============================================================
+    try:
+        print("\n" + "=" * 80)
+        print("DEMO 2: Behavioral Sequence")
+        print("=" * 80)
+        
+        from demo_behavioral import main as run_behavioral
+        run_behavioral()
+        
+        print("\n✅ Demo 2 Complete!\n")
+        
+    except Exception as e:
+        print(f"\n❌ Error in Demo 2: {e}")
+        import traceback
+        traceback.print_exc()
+    
+    # ============================================================
+    # Completion
+    # ============================================================
+    print("\n" + "=" * 80)
+    print(" " * 25 + "ALL DEMOS COMPLETE! ✨")
+    print("=" * 80)
+    print("\nThank you for trying the Local Linear Trend (LLT) method!")
+    print("\nFor more information, check out:")
+    print("  - README.md")
+    print("  - Google Colab: https://colab.research.google.com/drive/1jifMsj8nI_ZV-FL3ZScFP4wJJLQp97jH")
+    print("\n" + "=" * 80 + "\n")
 
 
 if __name__ == "__main__":
