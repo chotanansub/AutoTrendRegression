@@ -137,14 +137,14 @@ def get_demo_configs() -> Dict[str, DemoConfig]:
     Returns:
         Dictionary mapping demo keys to DemoConfig objects
     """
-    from autotrend import generate_simeple_wave, generate_behavioral_sequence
+    from autotrend import generate_simple_wave, generate_behavioral_sequence
     
     configs = {}
     
     # Demo 1: Simple Wave (Clean)
     configs['simple_wave_clean'] = DemoConfig(
         name="Simple Wave (Clean)",
-        data_generator=lambda: generate_simeple_wave(add_noise=False),
+        data_generator=lambda: generate_simple_wave(add_noise=False),
         window_size=10,
         max_models=5,
         error_percentile=40,
@@ -154,7 +154,7 @@ def get_demo_configs() -> Dict[str, DemoConfig]:
     # Demo 2: Simple Wave (Noisy)
     configs['simple_wave_noisy'] = DemoConfig(
         name="Simple Wave (Noisy)",
-        data_generator=lambda: generate_simeple_wave(add_noise=True, noise_strength=2),
+        data_generator=lambda: generate_simple_wave(add_noise=True, noise_strength=2),
         window_size=10,
         max_models=5,
         error_percentile=40,
