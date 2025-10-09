@@ -14,7 +14,8 @@ def main():
         data_generator=lambda: generate_simple_wave(add_noise=False),
         window_size=10,
         max_models=5,
-        error_percentile=40
+        error_percentile=40,
+        demo_type="simple_wave"
     )
     run_single_demo(config_clean, verbose=True)
     
@@ -24,7 +25,8 @@ def main():
         data_generator=lambda: generate_simple_wave(add_noise=True, noise_strength=2),
         window_size=10,
         max_models=5,
-        error_percentile=40
+        error_percentile=40,
+        demo_type="simple_wave"
     )
     run_single_demo(config_noisy, verbose=True)
 

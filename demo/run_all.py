@@ -14,6 +14,12 @@ def main():
     print(f"# LLT Demo Suite")
     print(f"# Running {len(configs)} demos")
     print(f"# Output directory: output/")
+    print(f"# Generating 5 plots per demo:")
+    print(f"#   - Error analysis plot")
+    print(f"#   - Slope comparison plot")
+    print(f"#   - Full decomposition plot")
+    print(f"#   - Iteration grid plot")
+    print(f"#   - Model statistics plot")
     print(f"{'#'*60}")
     
     for key, config in configs.items():
@@ -27,6 +33,7 @@ def main():
     print(f"\n{'#'*60}")
     print(f"# All demos completed!")
     print(f"# Check 'output/' for results")
+    print(f"# Each demo generated 5 visualization plots + 1 log file")
     print(f"{'#'*60}\n")
 
 

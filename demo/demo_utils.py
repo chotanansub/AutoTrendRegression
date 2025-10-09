@@ -15,7 +15,14 @@ import matplotlib.pyplot as plt
 from dataclasses import dataclass
 from typing import Callable, Dict
 
-from autotrend import decompose_llt, plot_error, plot_slope_comparison
+from autotrend import (
+    decompose_llt, 
+    plot_error, 
+    plot_slope_comparison,
+    plot_full_decomposition,
+    plot_iteration_grid,
+    plot_model_statistics
+)
 
 
 @dataclass
@@ -77,17 +84,16 @@ def run_single_demo(config: DemoConfig, verbose: bool = False) -> None:
     
     print(f"  Iterations: {result.get_num_iterations()}, Models: {len(result.models)}")
     
-    # Ensure subdirectory exists before saving
+    # 1. Generate and save error plot
     error_plot_path = config.get_output_path("error")
     error_plot_path.parent.mkdir(parents=True, exist_ok=True)
     
-    # Generate and save error plot
     plot_error(sequence, result.process_logs, config.window_size)
     plt.savefig(error_plot_path, dpi=150, bbox_inches='tight')
     plt.close('all')
     print(f"  ✓ {error_plot_path}")
     
-    # Generate and save slope comparison plot
+    # 2. Generate and save slope comparison plot
     if len(result.models) > 0:
         slope_plot_path = config.get_output_path("slopes")
         slope_plot_path.parent.mkdir(parents=True, exist_ok=True)
@@ -96,6 +102,33 @@ def run_single_demo(config: DemoConfig, verbose: bool = False) -> None:
         plt.savefig(slope_plot_path, dpi=150, bbox_inches='tight')
         plt.close('all')
         print(f"  ✓ {slope_plot_path}")
+    
+    # 3. Generate and save full decomposition plot
+    full_decomp_path = config.get_output_path("full_decomposition")
+    full_decomp_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    plot_full_decomposition(sequence, result, figsize=(16, 10))
+    plt.savefig(full_decomp_path, dpi=150, bbox_inches='tight')
+    plt.close('all')
+    print(f"  ✓ {full_decomp_path}")
+    
+    # 4. Generate and save iteration grid plot
+    iteration_grid_path = config.get_output_path("iteration_grid")
+    iteration_grid_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    plot_iteration_grid(sequence, result, figsize=(16, 12))
+    plt.savefig(iteration_grid_path, dpi=150, bbox_inches='tight')
+    plt.close('all')
+    print(f"  ✓ {iteration_grid_path}")
+    
+    # 5. Generate and save model statistics plot
+    model_stats_path = config.get_output_path("model_statistics")
+    model_stats_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    plot_model_statistics(result, figsize=(14, 8))
+    plt.savefig(model_stats_path, dpi=150, bbox_inches='tight')
+    plt.close('all')
+    print(f"  ✓ {model_stats_path}")
     
     # Save summary log
     log_path = config.get_output_path("log").with_suffix('.txt')
