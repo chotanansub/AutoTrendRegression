@@ -1,383 +1,304 @@
 import matplotlib.pyplot as plt
-import matplotlib.lines as mlines
 import matplotlib.patches as mpatches
+import matplotlib.lines as mlines
 import seaborn as sns
 import numpy as np
-from .utility import split_by_gap
 
-def plot_error(sequence, sliding_lr_output, window_size):
+
+def plot_final_decomposition(sequence, result, figsize=(16, 10)):
+    """
+    Plot final LLT decomposition results showing predictions colored by iteration.
+    
+    Args:
+        sequence: Original time series
+        result: LLTResult object from decompose_llt
+        figsize: Figure size tuple
+    """
     sns.set(style="whitegrid", context="talk", palette="muted")
-
-    num_iterations = len(sliding_lr_output)
-    fig, axes = plt.subplots(
-        nrows=num_iterations * 2,  # Double the rows for main plot + error plot
-        ncols=1,
-        figsize=(14, 7 * num_iterations),  # Increased height multiplier from 6 to 7
-        sharex=True,
-        gridspec_kw={'height_ratios': [3, 1] * num_iterations}  # Main plot taller than error plot
-    )
-    if num_iterations == 1:
-        axes = [axes] if len(axes.shape) == 1 else axes.flatten()
-    else:
-        axes = axes.flatten()
-
-    # Move the title positioning and reduce font size slightly
-    fig.suptitle("Sliding Linear Regression Error", fontsize=18, y=0.99)
-
-    for iteration, package in enumerate(sliding_lr_output):
-        predictions, absolute_errors, focused_ranges, high_error_flag, threshold_value = package
-        prediction_indices = [idx for r in focused_ranges for idx in range(r[0], r[1])]
-
-        high_errors = [err if flag == 1 else 0 for err, flag in zip(absolute_errors, high_error_flag)]
-        low_errors = [err if flag == 0 else 0 for err, flag in zip(absolute_errors, high_error_flag)]
-
-        if not prediction_indices:
-            continue  # skip empty plot
-
-        # Main plot (signal)
-        ax_main = axes[iteration * 2]
-        # Error plot
-        ax_error = axes[iteration * 2 + 1]
-
-        end_window = prediction_indices[0]
-        start_window = max(0, end_window - window_size)
-
-        # Plot training window
-        sns.lineplot(
-            x=np.arange(start_window, end_window),
-            y=sequence[start_window:end_window],
-            ax=ax_main,
-            color='royalblue',
-            linewidth=2.5,
-            zorder=3
-        )
-
-        # Highlight training window
-        ax_main.axvspan(
-            xmin=start_window,
-            xmax=end_window,
-            ymin=0,
-            ymax=1,
-            facecolor='cyan',
-            alpha=0.2,
-            zorder=0
-        )
-
-        # Plot full sequence
-        sns.lineplot(
-            x=np.arange(len(sequence)),
-            y=sequence,
-            ax=ax_main,
-            color='black',
-            linewidth=1.5,
-            alpha=1,
-            zorder=2
-        )
-
-        # Plot predictions
-        prediction_segments = split_by_gap(prediction_indices, predictions)
-        for xs, ys in prediction_segments:
-            sns.lineplot(
-                x=xs,
-                y=ys,
-                ax=ax_main,
-                color='purple',
-                linestyle='--',
-                linewidth=1.5,
-                alpha=0.7,
-                zorder=2
-            )
-
-        # Highlight evaluation areas with color based on error type - subdivided
-        for r in focused_ranges:
-            range_indices = list(range(r[0], r[1]))
-
-            # Get error flags for this range
-            range_error_flags = []
-            for idx in range_indices:
-                if idx in prediction_indices:
-                    pred_idx = prediction_indices.index(idx)
-                    range_error_flags.append(high_error_flag[pred_idx])
-                else:
-                    range_error_flags.append(None)  # No prediction for this index
-
-            # Group consecutive indices with same error type
-            current_start = r[0]
-            i = 0
-            while i < len(range_error_flags):
-                if range_error_flags[i] is not None:  # Only process indices with predictions
-                    current_error_type = range_error_flags[i]
-                    current_end = range_indices[i]
-
-                    # Find consecutive indices with same error type
-                    j = i + 1
-                    while j < len(range_error_flags) and range_error_flags[j] == current_error_type:
-                        current_end = range_indices[j]
-                        j += 1
-
-                    # Color based on error type
-                    if current_error_type == 1:  # High error
-                        facecolor = 'tomato'
-                        alpha = 0.15
-                    else:  # Low error
-                        facecolor = 'lightgreen'
-                        alpha = 0.15
-
-                    ax_main.axvspan(
-                        xmin=range_indices[i],
-                        xmax=current_end + 1,
-                        ymin=0,
-                        ymax=1,
-                        facecolor=facecolor,
-                        alpha=alpha,
-                        zorder=-1
-                    )
-
-                    i = j
-                else:
-                    i += 1
-
-        ax_main.set_title(f"Iteration: {iteration+1}", fontsize=16)
-        ax_main.set_ylabel("Value", fontsize=14)
-        ax_main.grid(True, linestyle='--', linewidth=0.5, alpha=0.6)
-
-        if len(prediction_indices) > 1:
-            min_gap = min(prediction_indices[i+1] - prediction_indices[i] for i in range(len(prediction_indices)-1))
-            bar_width = min(0.8, min_gap * 0.7)  # Adaptive width based on data density
-        else:
-            bar_width = 0.8
-
-        # Error subplot - vertical bar plot
-        # Create arrays for all indices with zero padding
-        all_errors_high = np.zeros(len(sequence))
-        all_errors_low = np.zeros(len(sequence))
-
-        # Fill in the actual errors at prediction indices
-        for i, idx in enumerate(prediction_indices):
-            all_errors_high[idx] = high_errors[i]
-            all_errors_low[idx] = low_errors[i]
-
-        # Plot error bars with fill colors
-        x_indices = np.arange(len(sequence))
-
-        # High errors (red) - with fill
-        high_mask = all_errors_high > 0
-        ax_error.bar(x_indices[high_mask], all_errors_high[high_mask],
-                    color='tomato', alpha=0.8, edgecolor='darkred', width=bar_width, label='High Error')
-
-        # Low errors (green) - with fill
-        low_mask = all_errors_low > 0
-        ax_error.bar(x_indices[low_mask], all_errors_low[low_mask],
-                    color='green', alpha=0.8, width=bar_width, edgecolor='darkgreen', label='Low Error')
-
-        # Add horizontal threshold line to error plot
-        ax_error.axhline(y=threshold_value, color='red', linestyle='--', 
-                        linewidth=1, alpha=0.7, zorder=5, label='Threshold')
-
-        # Highlight evaluation areas on error plot with same subdivision logic
-        for r in focused_ranges:
-            range_indices = list(range(r[0], r[1]))
-
-            # Get error flags for this range
-            range_error_flags = []
-            for idx in range_indices:
-                if idx in prediction_indices:
-                    pred_idx = prediction_indices.index(idx)
-                    range_error_flags.append(high_error_flag[pred_idx])
-                else:
-                    range_error_flags.append(None)  # No prediction for this index
-
-            # Group consecutive indices with same error type
-            current_start = r[0]
-            i = 0
-            while i < len(range_error_flags):
-                if range_error_flags[i] is not None:  # Only process indices with predictions
-                    current_error_type = range_error_flags[i]
-                    current_end = range_indices[i]
-
-                    # Find consecutive indices with same error type
-                    j = i + 1
-                    while j < len(range_error_flags) and range_error_flags[j] == current_error_type:
-                        current_end = range_indices[j]
-                        j += 1
-
-                    # Color based on error type
-                    if current_error_type == 1:  # High error
-                        facecolor = 'tomato'
-                        alpha = 0.15
-                    else:  # Low error
-                        facecolor = 'lightgreen'
-                        alpha = 0.15
-
-                    ax_error.axvspan(
-                        xmin=range_indices[i],
-                        xmax=current_end + 1,
-                        ymin=0,
-                        ymax=1,
-                        facecolor=facecolor,
-                        alpha=alpha,
-                        zorder=-1
-                    )
-
-                    i = j
-                else:
-                    i += 1
-
-        ax_error.set_ylabel("Error", fontsize=12)
-        ax_error.grid(True, linestyle='--', linewidth=0.5, alpha=0.6)
-
-        # Only show x-axis label on the last error subplot
-        if iteration == num_iterations - 1:
-            ax_error.set_xlabel("Time Index", fontsize=14)
-
-    # Define single global legend
-    legend_elements = [
-        mlines.Line2D([], [], color='royalblue', linewidth=2.5, label='Reference Window'),
-        mlines.Line2D([], [], color='purple', linewidth=2,linestyle='--', label='Reference Trend'),
-        mlines.Line2D([], [], color='black', linewidth=2, label='Observed Time Series'),
-        mpatches.Patch(color='lightgreen', alpha=0.15, label='Below Error Threshold Area'),
-        mpatches.Patch(color='tomato', alpha=0.15, label='Above Error Threshold Area'),
-        mpatches.Patch(color='tomato', alpha=0.8, label='Above Error Threshold Bars'),
-        mpatches.Patch(color='green', alpha=0.8, label='Below Error Threshold Bars'),
-        mlines.Line2D([], [], color='red', linewidth=2, linestyle='--', label='Threshold'),
-    ]
-    fig.legend(
-        handles=legend_elements,
-        loc='upper center',
-        ncol=4,  # Reduce columns from 7 to 4 for better spacing
-        bbox_to_anchor=(0.5, 0.97),  # Position legend right below title
-        fontsize=10
-    )
-
-    # Adjust the layout with minimal top margin
-    plt.tight_layout(rect=[0, 0.02, 1, 0.94])  # Bring plots very close to legend
-    plt.subplots_adjust(top=0.94)  # Additional adjustment to reduce top space
+    
+    fig, axes = plt.subplots(3, 1, figsize=figsize, 
+                            gridspec_kw={'height_ratios': [3, 2, 1]})
+    
+    # Get data
+    trend_marks = result.trend_marks
+    prediction_marks = result.prediction_marks
+    num_iterations = result.get_num_iterations()
+    
+    # Create color palette for iterations
+    colors = sns.color_palette("husl", num_iterations)
+    
+    # ============ Panel 1: Original Series with Predictions by Iteration ============
+    ax1 = axes[0]
+    
+    # Plot original series
+    ax1.plot(sequence, color='black', linewidth=2, label='Original Series', zorder=1)
+    
+    # Plot predictions colored by iteration
+    for iteration in range(1, num_iterations + 1):
+        mask = trend_marks == iteration
+        indices = np.where(mask)[0]
+        predictions = prediction_marks[mask]
+        
+        if len(indices) > 0:
+            ax1.scatter(indices, predictions, 
+                       color=colors[iteration-1], 
+                       s=50, alpha=0.7, 
+                       label=f'Iteration {iteration}',
+                       zorder=3, edgecolors='white', linewidth=0.5)
+    
+    ax1.set_title('Local Linear Trend Decomposition: Predictions by Iteration', 
+                 fontsize=16, pad=15)
+    ax1.set_ylabel('Value', fontsize=14)
+    ax1.legend(loc='best', fontsize=10, ncol=min(4, num_iterations))
+    ax1.grid(True, alpha=0.3)
+    
+    # ============ Panel 2: Trend Segments with Regression Lines ============
+    ax2 = axes[1]
+    
+    # Plot original series
+    ax2.plot(sequence, color='gray', linewidth=1.5, alpha=0.5, 
+            label='Original Series', zorder=1)
+    
+    # Plot each trend segment with its regression line
+    segments = result.get_trend_segments()
+    for start, end, iteration in segments:
+        color = colors[iteration-1]
+        
+        # Plot segment points
+        segment_indices = np.arange(start, end)
+        segment_values = prediction_marks[start:end]
+        
+        ax2.plot(segment_indices, segment_values, 
+                color=color, linewidth=2.5, alpha=0.8,
+                label=f'Trend Segment {iteration}', zorder=2)
+        
+        # Add shaded region
+        ax2.axvspan(start, end, facecolor=color, alpha=0.1, zorder=0)
+    
+    ax2.set_title('Trend Segments with Local Linear Fits', fontsize=16, pad=15)
+    ax2.set_ylabel('Value', fontsize=14)
+    ax2.legend(loc='best', fontsize=10, ncol=min(4, num_iterations))
+    ax2.grid(True, alpha=0.3)
+    
+    # ============ Panel 3: Residuals ============
+    ax3 = axes[2]
+    
+    # Calculate residuals where predictions exist
+    residuals = np.full(len(sequence), np.nan)
+    valid_mask = ~np.isnan(prediction_marks)
+    residuals[valid_mask] = sequence[valid_mask] - prediction_marks[valid_mask]
+    
+    # Plot residuals colored by iteration
+    for iteration in range(1, num_iterations + 1):
+        mask = trend_marks == iteration
+        indices = np.where(mask)[0]
+        iter_residuals = residuals[mask]
+        
+        if len(indices) > 0:
+            ax3.scatter(indices, iter_residuals, 
+                       color=colors[iteration-1], 
+                       s=30, alpha=0.6,
+                       zorder=2)
+    
+    # Add zero line
+    ax3.axhline(y=0, color='red', linestyle='--', linewidth=1.5, 
+               alpha=0.7, label='Zero Line')
+    
+    ax3.set_title('Residuals (Original - Predicted)', fontsize=16, pad=15)
+    ax3.set_xlabel('Time Index', fontsize=14)
+    ax3.set_ylabel('Residual', fontsize=14)
+    ax3.legend(loc='best', fontsize=10)
+    ax3.grid(True, alpha=0.3)
+    
+    plt.tight_layout()
     sns.despine()
-    plt.show()
+    return fig
 
-def plot_slope_comparison(models, x_range=(-5, 5), figsize=(14, 10)):
+
+def plot_iteration_breakdown(sequence, result, figsize=(16, 12)):
+    """
+    Plot each iteration's contribution separately in a grid layout.
+    
+    Args:
+        sequence: Original time series
+        result: LLTResult object from decompose_llt
+        figsize: Figure size tuple
+    """
     sns.set(style="whitegrid", context="talk", palette="muted")
-    fig, axes = plt.subplots(2, 2, figsize=figsize)
-    fig.suptitle("Slope Comparison Across Multiple Models", fontsize=18, y=1.03)
-    plt.subplots_adjust(top=0.90, hspace=0.4, wspace=0.3)
-
-
-    palette = sns.color_palette("muted", len(models))
-    title_pad = 12
-    fontsize_title = 14
-    fontsize_axis = 12
-
-    def add_arrow(ax, x_data, y_data, color):
-        """Draw arrowhead on last segment of line."""
-        ax.plot(x_data, y_data, color=color, linewidth=2)
-        ax.annotate(
-            '', xy=(x_data[-1], y_data[-1]), xytext=(x_data[-2], y_data[-2]),
-            arrowprops=dict(arrowstyle="->", color=color, lw=2)
-        )
-
-    # Regression Lines (Zoomed)
-    def plot_zoomed_lines(ax):
-        x = np.linspace(x_range[0], x_range[1], 100)
-        for i, (model, color) in enumerate(zip(models, palette)):
+    
+    num_iterations = result.get_num_iterations()
+    
+    # Determine grid layout
+    ncols = min(3, num_iterations)
+    nrows = (num_iterations + ncols - 1) // ncols
+    
+    fig, axes = plt.subplots(nrows, ncols, figsize=figsize, squeeze=False)
+    fig.suptitle('Iteration-by-Iteration Breakdown', fontsize=18, y=0.995)
+    
+    colors = sns.color_palette("husl", num_iterations)
+    
+    for iteration in range(1, num_iterations + 1):
+        row = (iteration - 1) // ncols
+        col = (iteration - 1) % ncols
+        ax = axes[row, col]
+        
+        # Plot original series
+        ax.plot(sequence, color='lightgray', linewidth=1.5, alpha=0.6, 
+               label='Original', zorder=1)
+        
+        # Get data for this iteration
+        mask = result.trend_marks == iteration
+        indices = np.where(mask)[0]
+        predictions = result.prediction_marks[mask]
+        
+        if len(indices) > 0:
+            # Plot predictions
+            ax.scatter(indices, predictions, 
+                      color=colors[iteration-1], 
+                      s=60, alpha=0.8, 
+                      label=f'Predictions',
+                      zorder=3, edgecolors='white', linewidth=0.5)
+            
+            # Plot trend line
+            ax.plot(indices, predictions, 
+                   color=colors[iteration-1], 
+                   linewidth=2, alpha=0.6, zorder=2)
+            
+            # Highlight region
+            ax.axvspan(indices[0], indices[-1], 
+                      facecolor=colors[iteration-1], alpha=0.1, zorder=0)
+            
+            # Add model info
+            model = result.models[iteration-1]
             slope = model.coef_[0]
             intercept = model.intercept_
-            y = slope * x + intercept
-            add_arrow(ax, x, y, color)
-        ax.set_title("Regression Lines", fontsize=fontsize_title, pad=title_pad)
-        ax.set_xlabel("X", fontsize=fontsize_axis)
-        ax.set_ylabel("Y", fontsize=fontsize_axis)
-        ax.tick_params(axis='both', labelsize=10)
-        ax.legend([f'Model {i+1} (m={model.coef_[0]:.4f})' for i, model in enumerate(models)], fontsize=10, loc="best")
+            ax.text(0.05, 0.95, 
+                   f'Slope: {slope:.4f}\nIntercept: {intercept:.2f}',
+                   transform=ax.transAxes, 
+                   fontsize=10, verticalalignment='top',
+                   bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
+        
+        ax.set_title(f'Iteration {iteration}', fontsize=14, pad=10)
+        ax.set_xlabel('Time Index', fontsize=11)
+        ax.set_ylabel('Value', fontsize=11)
+        ax.legend(loc='best', fontsize=9)
         ax.grid(True, alpha=0.3)
-
-    # Bar Chart of Slopes
-    def plot_slope_bars(ax):
-        slopes = [model.coef_[0] for model in models]
-        bars = ax.bar(range(len(models)), slopes, color=palette, alpha=0.8)
-        ax.set_title("Slope Magnitudes", fontsize=fontsize_title, pad=title_pad)
-        ax.set_xlabel("Model", fontsize=fontsize_axis)
-        ax.set_ylabel("Slope Value", fontsize=fontsize_axis)
-        ax.set_xticks(range(len(models)))
-        ax.set_xticklabels([f'M{i+1}' for i in range(len(models))])
-        ax.tick_params(axis='both', labelsize=10)
-        for bar, slope in zip(bars, slopes):
-            ax.text(bar.get_x() + bar.get_width()/2, bar.get_height(), f'{slope:.4f}',
-                     ha='center', va='bottom', fontsize=10)
-        ax.grid(True, alpha=0.3)
-
-    # Extended Range Plot
-    def plot_extended_lines(ax):
-        x_ext = np.linspace(0, 100, 100)
-        for i, (model, color) in enumerate(zip(models, palette)):
-            slope = model.coef_[0]
-            y_ext = slope * x_ext
-            add_arrow(ax, x_ext, y_ext, color)
-        ax.set_title("Extended Range (Amplifies Differences)", fontsize=fontsize_title, pad=title_pad)
-        ax.set_xlabel("X (Extended Range)", fontsize=fontsize_axis)
-        ax.set_ylabel("Y Change", fontsize=fontsize_axis)
-        ax.tick_params(axis='both', labelsize=10)
-        ax.legend([f'Model {i+1} (m={model.coef_[0]:.4f})' for i, model in enumerate(models)], fontsize=10, loc="upper left")
-        ax.grid(True, alpha=0.3)
-
-    # Fixed Half-Circle Angle Visualization - Right Half (Quadrants 1 & 4)
-    def plot_half_circle(ax):
-        ax.set_title("Slope Angles (Linear Trend)", fontsize=fontsize_title, pad=12)
-        ax.set_xlim(-0.1, 1.8)
-        ax.set_ylim(-1.2, 1.2)
-        ax.set_aspect('equal')
-        ax.axis('off')
-        
-        arc = np.linspace(-np.pi/2, np.pi/2, 300)
-        ax.plot(np.cos(arc), np.sin(arc), color='lightgray', lw=2)
-        
-        degree_marks = [-90, -60, -45, -30, -15, 0, 15, 30, 45, 60, 90]
-        for deg in degree_marks:
-            rad = np.radians(deg)
-            x = np.cos(rad)
-            y = np.sin(rad)
-            ax.plot([0, x], [0, y], ls='--', color='lightgray', lw=0.5, alpha=0.7)
-            if deg in [-90, -45, 0, 45, 90]:
-                ax.text(x * 1.15, y * 1.15, f"{deg}°", ha='center', va='center', 
-                        fontsize=9, color='gray', weight='bold')
-        
-        legend_info = []
-        for i, (model, color) in enumerate(zip(models, palette)):
-            slope = model.coef_[0]
-            angle = np.arctan(slope)
-            x = np.cos(angle)
-            y = np.sin(angle)
-            ax.arrow(0, 0, x * 0.85, y * 0.85, 
-                     head_width=0.04, head_length=0.05, 
-                     fc=color, ec=color, linewidth=1.5, alpha=0.8)
-            angle_deg = np.degrees(angle)
-            legend_info.append((f'Model {i+1}', angle_deg, color))
-        
-        ax.plot(0, 0, 'ko', markersize=4)
-        legend_x = 1.5
-        legend_y_start = 0.8
-        legend_y_spacing = 0.2
-
-        ax.text(legend_x, legend_y_start + 0.15, 'Models:', ha='left', va='center', 
-               fontsize=11, weight='bold', color='black')
-        for i, (model_name, angle_deg, color) in enumerate(legend_info):
-            y_pos = legend_y_start - i * legend_y_spacing
-            ax.arrow(legend_x, y_pos, 0.08, 0, head_width=0.02, head_length=0.02, 
-                     fc=color, ec=color, linewidth=2)
-            ax.text(legend_x + 0.12, y_pos, f'{model_name}: {angle_deg:.1f}°', 
-                    ha='left', va='center', fontsize=10, color=color, weight='bold')
-        
-        ax.text(0.6, -1.15, 'Linear Trend Angle', ha='center', va='top', 
-               fontsize=10, style='italic', color='darkgray')
-        ax.grid(True, alpha=0.3)
-  
-
-    plot_zoomed_lines(axes[0, 0])
-    plot_slope_bars(axes[0, 1])
-    plot_extended_lines(axes[1, 0])
-    plot_half_circle(axes[1, 1])
-
-    plt.show()
+    
+    # Hide unused subplots
+    for iteration in range(num_iterations + 1, nrows * ncols + 1):
+        row = (iteration - 1) // ncols
+        col = (iteration - 1) % ncols
+        axes[row, col].axis('off')
+    
+    plt.tight_layout()
+    sns.despine()
+    return fig
 
 
-
-
+def plot_trend_summary(result, figsize=(14, 8)):
+    """
+    Plot summary statistics and trend characteristics.
+    
+    Args:
+        result: LLTResult object from decompose_llt
+        figsize: Figure size tuple
+    """
+    sns.set(style="whitegrid", context="talk", palette="muted")
+    
+    fig, axes = plt.subplots(2, 2, figsize=figsize)
+    fig.suptitle('Trend Analysis Summary', fontsize=18, y=0.995)
+    
+    num_iterations = result.get_num_iterations()
+    colors = sns.color_palette("husl", num_iterations)
+    
+    # ============ Panel 1: Segment Lengths ============
+    ax1 = axes[0, 0]
+    segments = result.get_trend_segments()
+    segment_lengths = [end - start for start, end, _ in segments]
+    iterations = [iteration for _, _, iteration in segments]
+    
+    bars = ax1.bar(range(len(segment_lengths)), segment_lengths, 
+                   color=[colors[it-1] for it in iterations], alpha=0.7)
+    ax1.set_title('Trend Segment Lengths', fontsize=14, pad=10)
+    ax1.set_xlabel('Segment Index', fontsize=12)
+    ax1.set_ylabel('Length', fontsize=12)
+    ax1.grid(True, alpha=0.3, axis='y')
+    
+    # Add value labels
+    for i, (bar, length) in enumerate(zip(bars, segment_lengths)):
+        ax1.text(bar.get_x() + bar.get_width()/2, bar.get_height(), 
+                f'{length}', ha='center', va='bottom', fontsize=9)
+    
+    # ============ Panel 2: Model Slopes ============
+    ax2 = axes[0, 1]
+    slopes = [model.coef_[0] for model in result.models]
+    
+    bars = ax2.bar(range(1, num_iterations + 1), slopes, 
+                   color=colors, alpha=0.7)
+    ax2.set_title('Model Slopes by Iteration', fontsize=14, pad=10)
+    ax2.set_xlabel('Iteration', fontsize=12)
+    ax2.set_ylabel('Slope', fontsize=12)
+    ax2.axhline(y=0, color='red', linestyle='--', linewidth=1, alpha=0.5)
+    ax2.grid(True, alpha=0.3, axis='y')
+    
+    # Add value labels
+    for bar, slope in zip(bars, slopes):
+        ax2.text(bar.get_x() + bar.get_width()/2, bar.get_height(), 
+                f'{slope:.4f}', ha='center', 
+                va='bottom' if slope >= 0 else 'top', fontsize=9)
+    
+    # ============ Panel 3: Coverage per Iteration ============
+    ax3 = axes[1, 0]
+    coverage = []
+    for iteration in range(1, num_iterations + 1):
+        count = np.sum(result.trend_marks == iteration)
+        coverage.append(count)
+    
+    bars = ax3.bar(range(1, num_iterations + 1), coverage, 
+                   color=colors, alpha=0.7)
+    ax3.set_title('Points Covered by Each Iteration', fontsize=14, pad=10)
+    ax3.set_xlabel('Iteration', fontsize=12)
+    ax3.set_ylabel('Number of Points', fontsize=12)
+    ax3.grid(True, alpha=0.3, axis='y')
+    
+    # Add value labels
+    for bar, count in zip(bars, coverage):
+        ax3.text(bar.get_x() + bar.get_width()/2, bar.get_height(), 
+                f'{count}', ha='center', va='bottom', fontsize=9)
+    
+    # ============ Panel 4: Model Parameters Table ============
+    ax4 = axes[1, 1]
+    ax4.axis('off')
+    
+    # Create table data
+    table_data = [['Iteration', 'Slope', 'Intercept', 'Points']]
+    for iteration in range(1, num_iterations + 1):
+        model = result.models[iteration-1]
+        slope = model.coef_[0]
+        intercept = model.intercept_
+        count = coverage[iteration-1]
+        table_data.append([f'{iteration}', f'{slope:.4f}', 
+                          f'{intercept:.2f}', f'{count}'])
+    
+    table = ax4.table(cellText=table_data, cellLoc='center', loc='center',
+                     colWidths=[0.2, 0.3, 0.3, 0.2])
+    table.auto_set_font_size(False)
+    table.set_fontsize(10)
+    table.scale(1, 2)
+    
+    # Style header row
+    for i in range(4):
+        table[(0, i)].set_facecolor('#40466e')
+        table[(0, i)].set_text_props(weight='bold', color='white')
+    
+    # Color rows by iteration
+    for i in range(1, len(table_data)):
+        for j in range(4):
+            table[(i, j)].set_facecolor(colors[i-1])
+            table[(i, j)].set_alpha(0.3)
+    
+    ax4.set_title('Model Parameters', fontsize=14, pad=20)
+    
+    plt.tight_layout()
+    sns.despine()
+    return fig
