@@ -8,15 +8,15 @@ Main exports:
 - Data generators: generate_simple_wave, generate_behavioral_sequence
 """
 
-from .local_linear_trend import decompose_llt, LLTResult
-from .plot import (
+from .core.local_linear_trend import decompose_llt, LLTResult
+from .visualization.plot import (
     plot_error,
     plot_slope_comparison,
     plot_full_decomposition,
     plot_iteration_grid,
     plot_model_statistics
 )
-from .gen_data import generate_simple_wave, generate_piecewise_linear
+from .data.gen_data import generate_simple_wave, generate_piecewise_linear
 
 __all__ = [
     # Core algorithm

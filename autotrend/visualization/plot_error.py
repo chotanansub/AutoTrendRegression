@@ -3,7 +3,7 @@ import matplotlib.lines as mlines
 import matplotlib.patches as mpatches
 import seaborn as sns
 import numpy as np
-from .utility import split_by_gap
+from ..core.utility import split_by_gap
 
 
 def plot_error(sequence, sliding_lr_output, window_size):
