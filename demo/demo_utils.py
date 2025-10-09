@@ -137,7 +137,7 @@ def get_demo_configs() -> Dict[str, DemoConfig]:
     Returns:
         Dictionary mapping demo keys to DemoConfig objects
     """
-    from autotrend import generate_simple_wave, generate_behavioral_sequence
+    from autotrend import generate_simple_wave, generate_piecewise_linear
     
     configs = {}
     
@@ -161,26 +161,26 @@ def get_demo_configs() -> Dict[str, DemoConfig]:
         demo_type="simple_wave"
     )
     
-    # Demo 3: Behavioral Sequence (Increase-Decrease-Steady)
-    configs['behavioral_ids'] = DemoConfig(
-        name="Behavioral Sequence (IDS)",
-        data_generator=lambda: generate_behavioral_sequence(
-            behaviors=['increase', 'decrease', 'steady'],
+    # Demo 3: Piecewise Linear Sequence (Increase-Decrease-Steady)
+    configs['piecewise_ids'] = DemoConfig(
+        name="Piecewise Linear Sequence (IDS)",
+        data_generator=lambda: generate_piecewise_linear(
+            trends=['increase', 'decrease', 'steady'],
             total_length=300,
             min_seg_len=50,
             max_seg_len=150
         ),
-        window_size=20,
+        window_size=5,
         max_models=10,
-        error_percentile=30,
-        demo_type="behavioral"
+        error_percentile=50,
+        demo_type="piecewise_linear"
     )
     
-    # Demo 4: Behavioral Sequence (Complex Pattern)
-    configs['behavioral_complex'] = DemoConfig(
-        name="Behavioral Sequence (Complex)",
-        data_generator=lambda: generate_behavioral_sequence(
-            behaviors=['increase', 'steady', 'decrease', 'increase', 'steady'],
+    # Demo 4: Piecewise Linear Sequence (Complex Pattern)
+    configs['piecewise_complex'] = DemoConfig(
+        name="Piecewise Linear Sequence (Complex)",
+        data_generator=lambda: generate_piecewise_linear(
+            trends=['increase', 'steady', 'decrease', 'increase', 'steady'],
             total_length=500,
             min_seg_len=60,
             max_seg_len=120
@@ -190,7 +190,7 @@ def get_demo_configs() -> Dict[str, DemoConfig]:
         error_percentile=35,
         percentile_step=2,
         update_threshold=True,
-        demo_type="behavioral"
+        demo_type="piecewise_linear"
     )
     
     return configs
