@@ -29,13 +29,19 @@ class DemoConfig:
     percentile_step: int = 0
     update_threshold: bool = False
     output_dir: str = "output"
+    demo_type: str = "general"  # Used for subdirectory organization
     
     def get_output_path(self, suffix: str = "") -> Path:
-        """Generate output file path."""
-        base_name = self.name.lower().replace(" ", "_")
+        """Generate output file path in demo-type subdirectory."""
+        # Create subdirectory based on demo type
+        output_subdir = Path(self.output_dir) / self.demo_type
+        
+        # Clean filename from demo name
+        base_name = self.name.lower().replace(" ", "_").replace("(", "").replace(")", "")
+        
         if suffix:
-            return Path(self.output_dir) / f"{base_name}_{suffix}.png"
-        return Path(self.output_dir) / f"{base_name}.png"
+            return output_subdir / f"{base_name}_{suffix}.png"
+        return output_subdir / f"{base_name}.png"
 
 
 def run_single_demo(config: DemoConfig, verbose: bool = False) -> None:
@@ -50,9 +56,9 @@ def run_single_demo(config: DemoConfig, verbose: bool = False) -> None:
     print(f"Running: {config.name}")
     print(f"{'='*60}")
     
-    # Ensure output directory exists
-    output_path = Path(config.output_dir)
-    output_path.mkdir(exist_ok=True)
+    # Ensure output directory exists (including subdirectory)
+    output_subdir = Path(config.output_dir) / config.demo_type
+    output_subdir.mkdir(parents=True, exist_ok=True)
     
     # Generate data
     sequence = config.data_generator()
@@ -71,23 +77,29 @@ def run_single_demo(config: DemoConfig, verbose: bool = False) -> None:
     
     print(f"  Iterations: {result.get_num_iterations()}, Models: {len(result.models)}")
     
+    # Ensure subdirectory exists before saving
+    error_plot_path = config.get_output_path("error")
+    error_plot_path.parent.mkdir(parents=True, exist_ok=True)
+    
     # Generate and save error plot
     plot_error(sequence, result.process_logs, config.window_size)
-    error_plot_path = config.get_output_path("error")
     plt.savefig(error_plot_path, dpi=150, bbox_inches='tight')
     plt.close('all')
     print(f"  ✓ {error_plot_path}")
     
     # Generate and save slope comparison plot
     if len(result.models) > 0:
-        plot_slope_comparison(result.models, x_range=(-5, 5))
         slope_plot_path = config.get_output_path("slopes")
+        slope_plot_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        plot_slope_comparison(result.models, x_range=(-5, 5))
         plt.savefig(slope_plot_path, dpi=150, bbox_inches='tight')
         plt.close('all')
         print(f"  ✓ {slope_plot_path}")
     
     # Save summary log
     log_path = config.get_output_path("log").with_suffix('.txt')
+    log_path.parent.mkdir(parents=True, exist_ok=True)
     with open(log_path, 'w') as f:
         f.write(f"Demo: {config.name}\n")
         f.write(f"{'='*60}\n\n")
@@ -135,7 +147,8 @@ def get_demo_configs() -> Dict[str, DemoConfig]:
         data_generator=lambda: generate_simeple_wave(add_noise=False),
         window_size=10,
         max_models=5,
-        error_percentile=40
+        error_percentile=40,
+        demo_type="simple_wave"
     )
     
     # Demo 2: Simple Wave (Noisy)
@@ -144,7 +157,8 @@ def get_demo_configs() -> Dict[str, DemoConfig]:
         data_generator=lambda: generate_simeple_wave(add_noise=True, noise_strength=2),
         window_size=10,
         max_models=5,
-        error_percentile=40
+        error_percentile=40,
+        demo_type="simple_wave"
     )
     
     # Demo 3: Behavioral Sequence (Increase-Decrease-Steady)
@@ -158,7 +172,8 @@ def get_demo_configs() -> Dict[str, DemoConfig]:
         ),
         window_size=20,
         max_models=10,
-        error_percentile=30
+        error_percentile=30,
+        demo_type="behavioral"
     )
     
     # Demo 4: Behavioral Sequence (Complex Pattern)
@@ -174,7 +189,8 @@ def get_demo_configs() -> Dict[str, DemoConfig]:
         max_models=15,
         error_percentile=35,
         percentile_step=2,
-        update_threshold=True
+        update_threshold=True,
+        demo_type="behavioral"
     )
     
     return configs
