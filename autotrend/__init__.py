@@ -16,7 +16,7 @@ from .plot import (
     plot_iteration_grid,
     plot_model_statistics
 )
-from .gen_data import generate_simple_wave, generate_behavioral_sequence
+from .gen_data import generate_simple_wave, generate_piecewise_linear
 
 __all__ = [
     # Core algorithm
@@ -32,5 +32,5 @@ __all__ = [
     
     # Data generators
     'generate_simple_wave',
-    'generate_behavioral_sequence'
+    'generate_piecewise_linear'
 ]
