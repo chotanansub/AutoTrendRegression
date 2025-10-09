@@ -2,7 +2,7 @@ import numpy as np
 from scipy.signal import find_peaks
 from scipy.interpolate import interp1d
 
-def generate_simeple_wave(add_noise=False, noise_strength=2, seed=6969):
+def generate_simple_wave(add_noise=False, noise_strength=2, seed=6969):
     np.random.seed(seed)
 
     a = np.linspace(0, 50, 500)
