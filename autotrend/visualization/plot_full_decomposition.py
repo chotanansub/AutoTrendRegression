@@ -48,7 +48,8 @@ def plot_full_decomposition(sequence, result, figsize=(16, 10)):
     ax1.set_title('Local Linear Trend Decomposition: Predictions by Iteration', 
                  fontsize=16, pad=15)
     ax1.set_ylabel('Value', fontsize=14)
-    ax1.legend(loc='best', fontsize=10, ncol=min(4, num_iterations))
+    ax1.legend(loc='upper left', fontsize=10, ncol=min(4, num_iterations + 1), 
+               framealpha=0.9)
     ax1.grid(True, alpha=0.3)
     
     # Panel 2: Trend Segments with Regression Lines
@@ -58,21 +59,31 @@ def plot_full_decomposition(sequence, result, figsize=(16, 10)):
             label='Original Series', zorder=1)
     
     segments = result.get_trend_segments()
+    
+    # Group segments by iteration to avoid duplicate labels
+    iteration_plotted = set()
+    
     for start, end, iteration in segments:
         color = colors[iteration-1]
         
         segment_indices = np.arange(start, end)
         segment_values = prediction_marks[start:end]
         
+        # Only add label once per iteration
+        label = f'Iteration {iteration}' if iteration not in iteration_plotted else None
+        if iteration not in iteration_plotted:
+            iteration_plotted.add(iteration)
+        
         ax2.plot(segment_indices, segment_values, 
                 color=color, linewidth=2.5, alpha=0.8,
-                label=f'Trend Segment {iteration}', zorder=2)
+                label=label, zorder=2)
         
         ax2.axvspan(start, end, facecolor=color, alpha=0.1, zorder=0)
     
     ax2.set_title('Trend Segments with Local Linear Fits', fontsize=16, pad=15)
     ax2.set_ylabel('Value', fontsize=14)
-    ax2.legend(loc='best', fontsize=10, ncol=min(4, num_iterations))
+    ax2.legend(loc='upper left', fontsize=10, ncol=min(4, num_iterations + 1),
+               framealpha=0.9)
     ax2.grid(True, alpha=0.3)
     
     # Panel 3: Residuals
@@ -82,6 +93,7 @@ def plot_full_decomposition(sequence, result, figsize=(16, 10)):
     valid_mask = ~np.isnan(prediction_marks)
     residuals[valid_mask] = sequence[valid_mask] - prediction_marks[valid_mask]
     
+    # Plot residuals without individual iteration labels
     for iteration in range(1, num_iterations + 1):
         mask = trend_marks == iteration
         indices = np.where(mask)[0]
@@ -99,7 +111,7 @@ def plot_full_decomposition(sequence, result, figsize=(16, 10)):
     ax3.set_title('Residuals (Original - Predicted)', fontsize=16, pad=15)
     ax3.set_xlabel('Time Index', fontsize=14)
     ax3.set_ylabel('Residual', fontsize=14)
-    ax3.legend(loc='best', fontsize=10)
+    ax3.legend(loc='upper left', fontsize=10, framealpha=0.9)
     ax3.grid(True, alpha=0.3)
     
     plt.tight_layout()
