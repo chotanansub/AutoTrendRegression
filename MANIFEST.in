@@ -1,0 +1,24 @@
+include README.md
+include LICENSE
+include requirements.txt
+include pyproject.toml
+include setup.py
+
+# Include all Python files in the package
+recursive-include autotrend *.py
+
+# Exclude demo files and outputs
+recursive-exclude demo *
+recursive-exclude output *
+recursive-exclude tests *
+prune demo
+prune output
+prune tests
+
+# Exclude common development files
+global-exclude __pycache__
+global-exclude *.py[cod]
+global-exclude *$py.class
+global-exclude *.so
+global-exclude .DS_Store
+global-exclude *.egg-info
