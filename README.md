@@ -139,7 +139,12 @@ autotrend/
 │   │   └── utility.py                 # Helper functions (extract_ranges, split_by_gap)
 │   ├── data/
 │   │   ├── __init__.py
-│   │   └── gen_data.py                # Synthetic data generators
+│   │   ├── sythn_data/
+│   │   │   ├── __init__.py
+│   │   │   ├── generate_simple_wave.py          # Stationary sine wave generator
+│   │   │   ├── generate_nonstationary_wave.py   # Amplitude-modulated wave generator
+│   │   │   └── generate_piecewise_linear.py     # Piecewise linear sequence generator
+│   │   └── datasets/                  # Future: Real-world dataset loaders
 │   ├── visualization/
 │   │   ├── __init__.py
 │   │   ├── plot.py                    # Main plotting module
