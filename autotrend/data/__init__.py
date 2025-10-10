@@ -1,13 +1,19 @@
 """
-Data generation utilities for testing and demonstrations.
+Data utilities for AutoTrend.
 
-This module provides synthetic data generators for creating various
-time series patterns including sinusoidal waves and piecewise linear sequences.
+This module provides:
+- gen_data: Synthetic data generators for testing and demonstrations
+- datasets: Real-world dataset loaders (future)
 """
 
-from .gen_data import generate_simple_wave, generate_piecewise_linear
+from .sythn_data import (
+    generate_simple_wave,
+    generate_nonstationary_wave,
+    generate_piecewise_linear
+)
 
 __all__ = [
     'generate_simple_wave',
+    'generate_nonstationary_wave',
     'generate_piecewise_linear'
 ]
