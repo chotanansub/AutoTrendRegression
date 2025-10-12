@@ -36,7 +36,7 @@ class DemoRunner:
     
     def run(self, name, sequence, window_size=10, max_models=5, 
             error_percentile=40, percentile_step=0, update_threshold=False,
-            verbose=False):
+            verbose=2):
         """
         Run a complete demo: decomposition + visualization + logging.
         
@@ -48,7 +48,7 @@ class DemoRunner:
             error_percentile: Error threshold percentile
             percentile_step: Percentile increment per iteration
             update_threshold: Whether to update threshold each iteration
-            verbose: Print detailed decomposition logs
+            verbose: Verbosity level (0=silent, 1=basic, 2=detailed)
         """
         print(f"\n{'='*60}")
         print(f"Running: {name}")
@@ -66,7 +66,7 @@ class DemoRunner:
             error_percentile=error_percentile,
             percentile_step=percentile_step,
             update_threshold=update_threshold,
-            is_quiet=not verbose,
+            verbose=verbose,
             store_sequence=True
         )
         

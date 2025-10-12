@@ -37,7 +37,7 @@ result = decompose_llt(
     max_models=10,
     window_size=20,
     error_percentile=40,
-    is_quiet=True
+    verbose=0
 )
 
 print(f"✓ Decomposition completed")
@@ -62,7 +62,7 @@ decomposer = DecomposeLLT(
     error_percentile=40,
     update_threshold=True,
     percentile_step=2,
-    is_quiet=True
+    verbose=0
 )
 
 # Fit to sequence
@@ -145,7 +145,7 @@ print("Example 5: Fit and Plot (Convenience)")
 print("="*60)
 
 # One-liner to fit and visualize
-decomposer = DecomposeLLT(window_size=15, max_models=8, is_quiet=True)
+decomposer = DecomposeLLT(window_size=15, max_models=8, verbose=0)
 result3 = decomposer.fit_plot(
     sequence,
     plot_types=['full_decomposition'],  # Specify which plots to generate
