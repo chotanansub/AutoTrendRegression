@@ -17,6 +17,9 @@ def plot_iteration_grid(sequence, result, figsize=(16, 12)):
         sequence: Original time series
         result: LLTResult object from decompose_llt
         figsize: Figure size tuple
+        
+    Returns:
+        matplotlib Figure object
     """
     sns.set(style="whitegrid", context="talk", palette="muted")
     
@@ -79,4 +82,6 @@ def plot_iteration_grid(sequence, result, figsize=(16, 12)):
     
     plt.tight_layout()
     sns.despine()
+    
+    # Don't call plt.show() - let the caller decide
     return fig

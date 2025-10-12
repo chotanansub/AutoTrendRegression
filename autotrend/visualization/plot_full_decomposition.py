@@ -16,6 +16,9 @@ def plot_full_decomposition(sequence, result, figsize=(16, 10)):
         sequence: Original time series
         result: LLTResult object from decompose_llt
         figsize: Figure size tuple
+        
+    Returns:
+        matplotlib Figure object
     """
     sns.set(style="whitegrid", context="talk", palette="muted")
     
@@ -116,4 +119,6 @@ def plot_full_decomposition(sequence, result, figsize=(16, 10)):
     
     plt.tight_layout()
     sns.despine()
+    
+    # Don't call plt.show() - let the caller decide
     return fig

@@ -16,6 +16,9 @@ def plot_model_statistics(result, figsize=(14, 8)):
     Args:
         result: LLTResult object from decompose_llt
         figsize: Figure size tuple
+        
+    Returns:
+        matplotlib Figure object
     """
     sns.set(style="whitegrid", context="talk", palette="muted")
     
@@ -109,4 +112,6 @@ def plot_model_statistics(result, figsize=(14, 8)):
     
     plt.tight_layout()
     sns.despine()
+    
+    # Don't call plt.show() - let the caller decide
     return fig

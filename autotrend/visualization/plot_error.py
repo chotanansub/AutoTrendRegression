@@ -19,6 +19,9 @@ def plot_error(sequence, sliding_lr_output, window_size):
         sequence: Original time series
         sliding_lr_output: Process logs from decompose_llt
         window_size: Size of reference window
+        
+    Returns:
+        matplotlib Figure object
     """
     sns.set(style="whitegrid", context="talk", palette="muted")
 
@@ -245,4 +248,6 @@ def plot_error(sequence, sliding_lr_output, window_size):
     plt.tight_layout(rect=[0, 0.02, 1, 0.94])
     plt.subplots_adjust(top=0.94)
     sns.despine()
-    plt.show()
+    
+    # Don't call plt.show() - let the caller decide
+    return fig

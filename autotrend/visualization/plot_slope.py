@@ -17,6 +17,9 @@ def plot_slope_comparison(models, x_range=(-5, 5), figsize=(14, 10)):
         models: List of LinearRegression models
         x_range: Tuple of (min, max) for zoomed plot
         figsize: Figure size tuple
+        
+    Returns:
+        matplotlib Figure object
     """
     sns.set(style="whitegrid", context="talk", palette="muted")
     fig, axes = plt.subplots(2, 2, figsize=figsize)
@@ -138,4 +141,5 @@ def plot_slope_comparison(models, x_range=(-5, 5), figsize=(14, 10)):
     plot_extended_lines(axes[1, 0])
     plot_half_circle(axes[1, 1])
 
-    plt.show()
+    # Don't call plt.show() - let the caller decide
+    return fig
