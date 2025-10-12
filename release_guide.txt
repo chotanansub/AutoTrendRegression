@@ -1,0 +1,15 @@
+# Release Guide
+
+1. Build:
+   rm -rf build/ dist/ *.egg-info
+   python setup.py sdist bdist_wheel
+
+2. Verify:
+   twine check dist/*
+
+3. (Optional) Test on TestPyPI:
+   twine upload -r testpypi dist/*
+   pip install -i https://test.pypi.org/simple/ autotrend
+
+4. Publish:
+   twine upload dist/*
