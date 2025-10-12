@@ -3,16 +3,21 @@
 Run all predefined LLT demos and save outputs.
 Usage: python demo/run_all.py
 """
-from demo_utils import get_demo_configs, run_single_demo
+import sys
+from pathlib import Path
+
+# Add parent directory to path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+# Import demo cases
+from demo.cases import piecewise_linear, simple_wave, nonstationary
 
 
 def main():
     """Run all demos sequentially."""
-    configs = get_demo_configs()
-    
     print(f"\n{'#'*60}")
     print(f"# LLT Demo Suite")
-    print(f"# Running {len(configs)} demos")
+    print(f"# Running all demos")
     print(f"# Output directory: output/")
     print(f"# Generating 5 plots per demo:")
     print(f"#   - Error analysis plot")
@@ -22,11 +27,18 @@ def main():
     print(f"#   - Model statistics plot")
     print(f"{'#'*60}")
     
-    for key, config in configs.items():
+    demos = [
+        ("Piecewise Linear", piecewise_linear),
+        ("Simple Wave", simple_wave),
+        ("Nonstationary Wave", nonstationary)
+    ]
+    
+    for demo_name, demo_module in demos:
         try:
-            run_single_demo(config, verbose=False)
+            print(f"\n>>> Running {demo_name} Demos...")
+            demo_module.main()
         except Exception as e:
-            print(f"\n❌ Error in '{config.name}': {e}")
+            print(f"\n❌ Error in {demo_name} demos: {e}")
             import traceback
             traceback.print_exc()
     
