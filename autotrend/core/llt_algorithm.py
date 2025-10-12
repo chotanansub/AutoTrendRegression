@@ -1,90 +1,27 @@
+"""
+Core LLT algorithm implementation.
+"""
 import numpy as np
 from sklearn.linear_model import LinearRegression
-from typing import List, Tuple
-from dataclasses import dataclass
+from .llt_result import LLTResult
 from .utility import extract_ranges
 
 
-@dataclass
-class LLTResult:
-    """
-    Results from Local Linear Trend (LLT) decomposition.
-    
-    Attributes:
-        trend_marks: Array indicating which iteration labeled each point.
-                     Values represent the iteration number (1, 2, 3, ...) or NaN if unlabeled.
-        prediction_marks: Array of predicted values for each point.
-                         NaN for points without predictions.
-        models: List of LinearRegression models from each iteration.
-        process_logs: Detailed logs from each iteration for visualization.
-                     Each log is a tuple of (predictions, errors, focus_ranges, high_error_flag, threshold_value).
-    """
-    trend_marks: np.ndarray
-    prediction_marks: np.ndarray
-    models: List[LinearRegression]
-    process_logs: List[Tuple]
-    
-    def get_num_iterations(self) -> int:
-        """Get the number of iterations performed."""
-        return len(self.models)
-    
-    def get_trend_segments(self) -> List[Tuple[int, int, int]]:
-        """
-        Extract contiguous trend segments.
-        
-        Returns:
-            List of tuples (start_idx, end_idx, iteration_number)
-        """
-        segments = []
-        current_trend = None
-        start_idx = None
-        
-        for i, trend in enumerate(self.trend_marks):
-            if not np.isnan(trend):
-                if trend != current_trend:
-                    if current_trend is not None:
-                        segments.append((start_idx, i, int(current_trend)))
-                    current_trend = trend
-                    start_idx = i
-            else:
-                if current_trend is not None:
-                    segments.append((start_idx, i, int(current_trend)))
-                    current_trend = None
-                    start_idx = None
-        
-        if current_trend is not None:
-            segments.append((start_idx, len(self.trend_marks), int(current_trend)))
-        
-        return segments
-    
-    def get_predictions_by_iteration(self, iteration: int) -> Tuple[np.ndarray, np.ndarray]:
-        """
-        Get indices and predictions for a specific iteration.
-        
-        Args:
-            iteration: Iteration number (1-indexed)
-            
-        Returns:
-            Tuple of (indices, predictions) for points labeled in that iteration
-        """
-        mask = self.trend_marks == iteration
-        indices = np.where(mask)[0]
-        predictions = self.prediction_marks[mask]
-        return indices, predictions
-
-
-def decompose_llt(
+def decompose_llt_internal(
     seq: np.ndarray,
-    max_models: int = 10,
-    window_size: int = 5,
-    error_percentile: int = 40,
-    percentile_step: int = 0,
-    update_threshold: bool = False,
-    is_quiet: bool = False
+    max_models: int,
+    window_size: int,
+    error_percentile: int,
+    percentile_step: int,
+    update_threshold: bool,
+    is_quiet: bool,
+    store_sequence: bool
 ) -> LLTResult:
     """
-    Fit linear regression on high-error segments identified via sliding windows.
-
+    Internal implementation of LLT decomposition.
+    
+    This is the core algorithm called by both the functional and object-based APIs.
+    
     Args:
         seq: 1D input sequence.
         max_models: Maximum number of refinement rounds.
@@ -93,24 +30,11 @@ def decompose_llt(
         percentile_step: Step size to increase error threshold per round.
         update_threshold: Whether to update threshold each iteration.
         is_quiet: Whether to suppress printed output.
-
+        store_sequence: Whether to store sequence in result for plotting convenience.
+        
     Returns:
-        LLTResult: Dataclass containing trend_marks, prediction_marks, models, and process_logs.
-        
-    Example:
-        >>> result = decompose_llt(seq, max_models=5, window_size=10)
-        >>> print(f"Completed {result.get_num_iterations()} iterations")
-        >>> plot_error(sequence, result.process_logs, window_size)
-        
-        # Access individual components
-        >>> trends = result.trend_marks
-        >>> predictions = result.prediction_marks
-        >>> models = result.models
-        
-        # Or unpack if needed (backward compatible)
-        >>> trend_marks, prediction_marks, models, logs = result
+        LLTResult object containing decomposition results.
     """
-
     models, process_logs = [], []
     seq_len = len(seq)
     focus_targets = [i + window_size for i in range(seq_len - window_size)]
@@ -203,5 +127,7 @@ def decompose_llt(
         trend_marks=trend_marks,
         prediction_marks=prediction_marks,
         models=models,
-        process_logs=process_logs
+        process_logs=process_logs,
+        _sequence=seq.copy() if store_sequence else None,
+        _window_size=window_size if store_sequence else None
     )
