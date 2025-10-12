@@ -20,7 +20,7 @@ class DecomposeLLT:
         error_percentile: Initial percentile threshold for high errors.
         percentile_step: Step size to increase error threshold per iteration.
         update_threshold: Whether to update threshold each iteration.
-        is_quiet: Whether to suppress printed output.
+        verbose: Verbosity level (0=silent, 1=basic progress, 2=detailed statistics).
         store_sequence: Whether to store sequence in result for plotting convenience.
     
     Attributes:
@@ -48,7 +48,7 @@ class DecomposeLLT:
         error_percentile: int = 40,
         percentile_step: int = 0,
         update_threshold: bool = False,
-        is_quiet: bool = False,
+        verbose: int = 2,
         store_sequence: bool = True
     ):
         self.max_models = max_models
@@ -56,7 +56,7 @@ class DecomposeLLT:
         self.error_percentile = error_percentile
         self.percentile_step = percentile_step
         self.update_threshold = update_threshold
-        self.is_quiet = is_quiet
+        self.verbose = verbose
         self.store_sequence = store_sequence
         
         # Fitted attributes (set after fit)
@@ -80,7 +80,7 @@ class DecomposeLLT:
             error_percentile=self.error_percentile,
             percentile_step=self.percentile_step,
             update_threshold=self.update_threshold,
-            is_quiet=self.is_quiet,
+            verbose=self.verbose,
             store_sequence=self.store_sequence
         )
         self.n_iterations_ = self.result_.get_num_iterations()
@@ -164,7 +164,7 @@ class DecomposeLLT:
             'error_percentile': self.error_percentile,
             'percentile_step': self.percentile_step,
             'update_threshold': self.update_threshold,
-            'is_quiet': self.is_quiet,
+            'verbose': self.verbose,
             'store_sequence': self.store_sequence
         }
     

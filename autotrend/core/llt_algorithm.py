@@ -14,7 +14,7 @@ def decompose_llt_internal(
     error_percentile: int,
     percentile_step: int,
     update_threshold: bool,
-    is_quiet: bool,
+    verbose: int,
     store_sequence: bool
 ) -> LLTResult:
     """
@@ -29,7 +29,7 @@ def decompose_llt_internal(
         error_percentile: Initial percentile threshold for high errors.
         percentile_step: Step size to increase error threshold per round.
         update_threshold: Whether to update threshold each iteration.
-        is_quiet: Whether to suppress printed output.
+        verbose: Verbosity level (0=silent, 1=basic, 2=detailed).
         store_sequence: Whether to store sequence in result for plotting convenience.
         
     Returns:
@@ -42,23 +42,32 @@ def decompose_llt_internal(
     trend_marks = np.concatenate([np.ones(window_size), np.full(seq_len - window_size, np.nan)])
     prediction_marks = np.full(seq_len, np.nan)
 
+    # Header for verbose output
+    if verbose >= 1:
+        print(f'\nAutoTrend LLT Decomposition')
+        print(f'{"="*60}')
+        print(f'Sequence length: {seq_len}')
+        print(f'Configuration: window={window_size}, max_iter={max_models}, '
+              f'threshold=P{error_percentile}')
+        print()
+
     for iteration in range(max_models):
-        if not is_quiet:
-            print(f'\n[Iteration {iteration + 1}/{max_models}]')
+        if verbose >= 1:
+            print(f'Iteration {iteration + 1}/{max_models}', end='')
 
         #=============== (1) Determine Focus Windows Based on High-Error Ranges
 
         if not focus_targets:
-            if not is_quiet:
-                print('- No focused error regions found.')
-                print('- All segments are sufficiently accurate. Stopping early.')
+            if verbose >= 1:
+                print(f'\n\n✓ Converged after {iteration} iterations')
+                print(f'  Convergence reason: No remaining high-error points')
             break
 
         focus_ranges = extract_ranges(focus_targets)
 
-        if not is_quiet:
-            print(f' - focus_targets: {len(focus_targets)} : {focus_targets}')
-            print(f' - focus_ranges (plot): {focus_ranges}')
+        if verbose >= 2:
+            print(f'\n  Focus targets: {len(focus_targets)} points')
+            print(f'  Focus ranges: {focus_ranges}')
 
         #=============== (2) Train Linear Model on First Focus Window
 
@@ -70,6 +79,10 @@ def decompose_llt_internal(
 
         model = LinearRegression()
         model.fit(X_train, y_train)
+
+        if verbose >= 2:
+            print(f'  Training window: [{train_start}, {train_end})')
+            print(f'  Model: slope={model.coef_[0]:.4f}, intercept={model.intercept_:.4f}')
 
         #=============== (3) Apply Inference and Compute Errors in Focus Regions
 
@@ -108,9 +121,20 @@ def decompose_llt_internal(
         focus_targets = list(np.array(focus_targets)[~low_error_mask])
         high_error_flag = [int(e > threshold_value) for e in errors]
 
-        if not is_quiet:
-            print(f' - errors: {len(errors)} : {errors}')
-            print(f' - error threshold (P{error_percentile}): {threshold_value:.4f}')
+        # Calculate statistics for output
+        num_accepted = np.sum(low_error_mask)
+        num_remaining = len(focus_targets)
+        acceptance_rate = (num_accepted / len(low_error_mask) * 100) if len(low_error_mask) > 0 else 0
+
+        if verbose >= 2:
+            print(f'  Error stats: mean={np.mean(errors):.4f}, std={np.std(errors):.4f}, '
+                  f'P{error_percentile}={threshold_value:.4f}')
+            print(f'  Threshold: {threshold_value:.4f}')
+            print(f'  Result: {num_accepted} accepted ({acceptance_rate:.1f}%), '
+                  f'{num_remaining} remaining ({100-acceptance_rate:.1f}%)')
+        elif verbose >= 1:
+            print(f': {len(low_error_mask)} points evaluated → '
+                  f'{num_accepted} accepted, {num_remaining} remaining')
 
         models.append(model)
         process_logs.append((predictions, errors, focus_ranges, high_error_flag, threshold_value))
@@ -120,8 +144,25 @@ def decompose_llt_internal(
             for i in range(window_size):
                 prediction_marks[i] = model.predict([[i]])[0]
 
-    if not is_quiet:
-        print('\n[Done]')
+    # Final summary
+    if verbose >= 1:
+        if len(focus_targets) == 0:
+            print(f'\n✓ Converged after {len(models)} iterations')
+        else:
+            print(f'\n✓ Stopped after {len(models)} iterations (max reached)')
+        
+        print(f'  Total points: {seq_len}')
+        print(f'  Models trained: {len(models)}')
+        coverage = np.sum(~np.isnan(prediction_marks)) / seq_len * 100
+        print(f'  Coverage: {coverage:.1f}%')
+        
+        if verbose >= 2:
+            print(f'  Iteration breakdown:')
+            for i in range(1, len(models) + 1):
+                count = np.sum(trend_marks == i)
+                pct = count / seq_len * 100
+                print(f'    Iter {i}: {count} pts ({pct:.1f}%)')
+        print()
     
     return LLTResult(
         trend_marks=trend_marks,

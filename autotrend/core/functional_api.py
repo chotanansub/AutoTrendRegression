@@ -13,7 +13,7 @@ def decompose_llt(
     error_percentile: int = 40,
     percentile_step: int = 0,
     update_threshold: bool = False,
-    is_quiet: bool = False,
+    verbose: int = 2,
     store_sequence: bool = True
 ) -> LLTResult:
     """
@@ -29,7 +29,7 @@ def decompose_llt(
         error_percentile: Initial percentile threshold for high errors.
         percentile_step: Step size to increase error threshold per round.
         update_threshold: Whether to update threshold each iteration.
-        is_quiet: Whether to suppress printed output.
+        verbose: Verbosity level (0=silent, 1=basic progress, 2=detailed statistics).
         store_sequence: Whether to store sequence in result for plotting convenience.
 
     Returns:
@@ -39,6 +39,10 @@ def decompose_llt(
         >>> # Functional API (quick usage)
         >>> result = decompose_llt(seq, max_models=5, window_size=10)
         >>> result.plot_full_decomposition()
+        
+        >>> # With verbose output
+        >>> result = decompose_llt(seq, verbose=1)  # Basic progress
+        >>> result = decompose_llt(seq, verbose=2)  # Detailed statistics
         
         >>> # Access components
         >>> trends = result.trend_marks
@@ -55,7 +59,7 @@ def decompose_llt(
         error_percentile=error_percentile,
         percentile_step=percentile_step,
         update_threshold=update_threshold,
-        is_quiet=is_quiet,
+        verbose=verbose,
         store_sequence=store_sequence
     )
     return decomposer.fit(seq)
