@@ -93,6 +93,7 @@ class LLTResult:
             matplotlib Figure object
         """
         from ..visualization import plot_error
+        import matplotlib.pyplot as plt
         
         seq = sequence if sequence is not None else self._sequence
         ws = window_size if window_size is not None else self._window_size
@@ -102,7 +103,9 @@ class LLTResult:
         if ws is None:
             raise ValueError("Window size must be provided either during decomposition or when plotting")
         
-        return plot_error(seq, self.process_logs, ws, **kwargs)
+        fig = plot_error(seq, self.process_logs, ws, **kwargs)
+        plt.close(fig)  # Close to prevent duplicate display
+        return fig
     
     def plot_slopes(self, **kwargs):
         """
@@ -115,7 +118,11 @@ class LLTResult:
             matplotlib Figure object
         """
         from ..visualization import plot_slope_comparison
-        return plot_slope_comparison(self.models, **kwargs)
+        import matplotlib.pyplot as plt
+        
+        fig = plot_slope_comparison(self.models, **kwargs)
+        plt.close(fig)  # Close to prevent duplicate display
+        return fig
     
     def plot_full_decomposition(self, sequence=None, **kwargs):
         """
@@ -129,12 +136,15 @@ class LLTResult:
             matplotlib Figure object
         """
         from ..visualization import plot_full_decomposition
+        import matplotlib.pyplot as plt
         
         seq = sequence if sequence is not None else self._sequence
         if seq is None:
             raise ValueError("Sequence must be provided either during decomposition or when plotting")
         
-        return plot_full_decomposition(seq, self, **kwargs)
+        fig = plot_full_decomposition(seq, self, **kwargs)
+        plt.close(fig)  # Close to prevent duplicate display
+        return fig
     
     def plot_iteration_grid(self, sequence=None, **kwargs):
         """
@@ -148,12 +158,15 @@ class LLTResult:
             matplotlib Figure object
         """
         from ..visualization import plot_iteration_grid
+        import matplotlib.pyplot as plt
         
         seq = sequence if sequence is not None else self._sequence
         if seq is None:
             raise ValueError("Sequence must be provided either during decomposition or when plotting")
         
-        return plot_iteration_grid(seq, self, **kwargs)
+        fig = plot_iteration_grid(seq, self, **kwargs)
+        plt.close(fig)  # Close to prevent duplicate display
+        return fig
     
     def plot_statistics(self, **kwargs):
         """
@@ -166,7 +179,11 @@ class LLTResult:
             matplotlib Figure object
         """
         from ..visualization import plot_model_statistics
-        return plot_model_statistics(self, **kwargs)
+        import matplotlib.pyplot as plt
+        
+        fig = plot_model_statistics(self, **kwargs)
+        plt.close(fig)  # Close to prevent duplicate display
+        return fig
     
     def plot_all(self, sequence=None, window_size=None, output_dir=None, prefix="llt", show=True):
         """
@@ -208,6 +225,9 @@ class LLTResult:
                 plt.close(fig)
                 print(f"  ✓ Saved: {save_path}")
         elif show:
-            plt.show()
+            # Reopen figures for display
+            for name, fig in plots.items():
+                fig.canvas.draw()
+                fig.show()
         
         return plots
