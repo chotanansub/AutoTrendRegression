@@ -9,11 +9,26 @@
 
 ---
 
+## 📦 Installation
+
+```bash
+pip install autotrend
+```
+
+Or install from source:
+```bash
+git clone https://github.com/chotanansub/autotrend.git
+cd autotrend
+pip install -e .
+```
+
+---
+
 ## 🚀 Quick Start
 
 ```python
 import numpy as np
-from autotrend import decompose_llt, plot_full_decomposition
+from autotrend import decompose_llt
 
 # Generate or load your time series
 sequence = np.sin(np.linspace(0, 50, 500)) + np.linspace(0, 5, 500)
@@ -27,7 +42,7 @@ result = decompose_llt(
 )
 
 # Visualize results
-plot_full_decomposition(sequence, result)
+result.plot_full_decomposition()
 
 # Access results
 print(f"Number of iterations: {result.get_num_iterations()}")
@@ -70,8 +85,8 @@ AutoTrend uses an **iterative, focus-based approach**:
 ### Input
 - **Sequence**: Univariate time series `y = [y₀, y₁, ..., yₜ]`
 - **Parameters**:
-  - `window_size`: Size of training window (default: 10)
-  - `max_models`: Maximum iterations (default: 5)
+  - `window_size`: Size of training window (default: 5)
+  - `max_models`: Maximum iterations (default: 10)
   - `error_percentile`: Error threshold percentile (default: 40)
   - `percentile_step`: Increment per iteration (default: 0)
   - `update_threshold`: Whether to update threshold each iteration (default: False)
@@ -135,7 +150,10 @@ autotrend/
 │   ├── __init__.py                    # Main package exports
 │   ├── core/
 │   │   ├── __init__.py
-│   │   ├── local_linear_trend.py      # Core LLT algorithm
+│   │   ├── llt_algorithm.py           # Core LLT implementation
+│   │   ├── llt_result.py              # Result dataclass with plotting methods
+│   │   ├── decompose_llt_class.py     # Object-based API (DecomposeLLT)
+│   │   ├── functional_api.py          # Functional API (decompose_llt)
 │   │   └── utility.py                 # Helper functions (extract_ranges, split_by_gap)
 │   ├── data/
 │   │   ├── __init__.py
@@ -156,13 +174,26 @@ autotrend/
 │   └── decomposition/
 │       └── __init__.py                # Future: Trend-seasonal decomposition
 ├── demo/
-│   ├── demo_utils.py                  # Demo configuration and utilities
-│   ├── simple_wave.py                 # Sine wave demo
-│   ├── piecewise_linear.py            # Piecewise linear demo
+│   ├── __init__.py
+│   ├── demo_runner.py                 # Demo configuration and utilities
+│   ├── cases/
+│   │   ├── __init__.py
+│   │   ├── simple_wave.py             # Sine wave demo
+│   │   ├── nonstationary.py           # Non-stationary wave demo
+│   │   └── piecewise_linear.py        # Piecewise linear demo
 │   └── run_all.py                     # Run all demos
+├── examples/
+│   ├── 01_quick_start.py
+│   └── 02_basic_usage.py
 ├── output/                            # Generated plots and logs
 │   ├── simple_wave/
+│   ├── nonstationary_wave/
 │   └── piecewise_linear/
 ├── README.md
-└── requirements.txt
+├── setup.py
+├── pyproject.toml
+├── requirements.txt
+├── MANIFEST.in
+├── update_package.sh
+└── .gitignore
 ```
