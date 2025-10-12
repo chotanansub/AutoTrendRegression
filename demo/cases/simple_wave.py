@@ -15,7 +15,11 @@ def main():
     runner = DemoRunner(output_subdir="simple_wave")
     
     # Demo 1: Clean version
-    sequence_clean = generate_simple_wave(add_noise=False)
+    sequence_clean = generate_simple_wave(
+        length=500,
+        frequency=5.0,  
+        add_noise=False
+    )
     
     runner.run(
         name="Simple Wave (Clean)",
@@ -25,8 +29,13 @@ def main():
         error_percentile=40
     )
     
-    # Demo 2: Noisy version
-    sequence_noisy = generate_simple_wave(add_noise=True, noise_strength=2)
+    # Demo 2: Noisy version 
+    sequence_noisy = generate_simple_wave(
+        length=500,
+        frequency=5.0,  
+        add_noise=True, 
+        noise_strength=0.8
+    )
     
     runner.run(
         name="Simple Wave (Noisy)",
