@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Make executable: chmod +x update_package.sh
+#
 # Usage: 
 #   ./update_package.sh patch   (0.1.0 -> 0.1.1)
 #   ./update_package.sh minor   (0.1.1 -> 0.2.0)
@@ -12,17 +14,122 @@ set -e
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
+BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Get current version from setup.py
-CURRENT_VERSION=$(grep "version=" setup.py | head -1 | sed "s/.*version='\([0-9.]*\)'.*/\1/")
+echo -e "${BLUE}=================================${NC}"
+echo -e "${BLUE}AutoTrend Package Update Script${NC}"
+echo -e "${BLUE}=================================${NC}"
+echo ""
 
-if [ -z "$CURRENT_VERSION" ]; then
-    echo -e "${RED}✗ Could not find current version in setup.py${NC}"
-    exit 1
+# ============================================================
+# STEP 1: Check Version Consistency in Source Files
+# ============================================================
+echo -e "${YELLOW}[1/5] Checking version consistency...${NC}"
+
+VERSION_SETUP=$(grep "version=" setup.py | head -1 | sed "s/.*version='\([0-9.]*\)'.*/\1/")
+VERSION_PYPROJECT=$(grep "version = " pyproject.toml | head -1 | sed 's/.*version = "\([0-9.]*\)".*/\1/')
+VERSION_INIT=$(grep "__version__ = " autotrend/__init__.py | sed "s/.*__version__ = '\([0-9.]*\)'.*/\1/")
+
+echo "  setup.py:              ${VERSION_SETUP}"
+echo "  pyproject.toml:        ${VERSION_PYPROJECT}"
+echo "  autotrend/__init__.py: ${VERSION_INIT}"
+echo ""
+
+# Check if all versions match
+if [ "$VERSION_SETUP" != "$VERSION_PYPROJECT" ] || [ "$VERSION_SETUP" != "$VERSION_INIT" ]; then
+    echo -e "${RED}✗ Version mismatch detected!${NC}"
+    echo ""
+    
+    # Find the highest version to suggest
+    HIGHEST_VERSION=$(printf '%s\n' "$VERSION_SETUP" "$VERSION_PYPROJECT" "$VERSION_INIT" | sort -V | tail -n1)
+    
+    # Show each file with suggestion
+    if [ "$VERSION_SETUP" != "$HIGHEST_VERSION" ]; then
+        echo -e "  setup.py:              ${RED}$VERSION_SETUP${NC} ${YELLOW}(suggest: $HIGHEST_VERSION)${NC}"
+    else
+        echo -e "  setup.py:              ${GREEN}$VERSION_SETUP${NC}"
+    fi
+    
+    if [ "$VERSION_PYPROJECT" != "$HIGHEST_VERSION" ]; then
+        echo -e "  pyproject.toml:        ${RED}$VERSION_PYPROJECT${NC} ${YELLOW}(suggest: $HIGHEST_VERSION)${NC}"
+    else
+        echo -e "  pyproject.toml:        ${GREEN}$VERSION_PYPROJECT${NC}"
+    fi
+    
+    if [ "$VERSION_INIT" != "$HIGHEST_VERSION" ]; then
+        echo -e "  autotrend/__init__.py: ${RED}$VERSION_INIT${NC} ${YELLOW}(suggest: $HIGHEST_VERSION)${NC}"
+    else
+        echo -e "  autotrend/__init__.py: ${GREEN}$VERSION_INIT${NC}"
+    fi
+    
+    echo ""
+    echo -e "${YELLOW}Recommended action: Update all versions to ${GREEN}$HIGHEST_VERSION${NC}"
+    echo ""
+    read -p "Would you like to auto-fix all versions to $HIGHEST_VERSION? (y/n) " -n 1 -r
+    echo ""
+    
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        # Detect OS for sed compatibility
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            sed -i '' "s/version='[0-9.]*'/version='$HIGHEST_VERSION'/" setup.py
+            sed -i '' "s/version = \"[0-9.]*\"/version = \"$HIGHEST_VERSION\"/" pyproject.toml
+            sed -i '' "s/__version__ = '[0-9.]*'/__version__ = '$HIGHEST_VERSION'/" autotrend/__init__.py
+        else
+            sed -i "s/version='[0-9.]*'/version='$HIGHEST_VERSION'/" setup.py
+            sed -i "s/version = \"[0-9.]*\"/version = \"$HIGHEST_VERSION\"/" pyproject.toml
+            sed -i "s/__version__ = '[0-9.]*'/__version__ = '$HIGHEST_VERSION'/" autotrend/__init__.py
+        fi
+        
+        echo -e "${GREEN}✓ All versions updated to $HIGHEST_VERSION${NC}"
+        echo ""
+        echo -e "${YELLOW}Please run the script again to proceed with version update.${NC}"
+        exit 0
+    else
+        echo -e "${YELLOW}Please fix versions manually and run the script again.${NC}"
+        exit 1
+    fi
 fi
 
-echo -e "${YELLOW}Current version: ${CURRENT_VERSION}${NC}"
+CURRENT_VERSION="$VERSION_SETUP"
+echo -e "${GREEN}✓ All versions are consistent: ${CURRENT_VERSION}${NC}"
+echo ""
+
+# ============================================================
+# STEP 2: Check PyPI for Latest Published Version
+# ============================================================
+echo -e "${YELLOW}[2/5] Checking PyPI for conflicts...${NC}"
+
+# Try to fetch the latest version from PyPI
+PYPI_VERSION=$(curl -s https://pypi.org/pypi/autotrend/json | python3 -c "import sys, json; print(json.load(sys.stdin)['info']['version'])" 2>/dev/null || echo "not_found")
+
+if [ "$PYPI_VERSION" = "not_found" ]; then
+    echo -e "${BLUE}  Package not found on PyPI (this might be the first release)${NC}"
+else
+    echo "  Latest PyPI version: ${PYPI_VERSION}"
+    
+    # Compare versions
+    if [ "$CURRENT_VERSION" = "$PYPI_VERSION" ]; then
+        echo -e "${RED}✗ Current version ($CURRENT_VERSION) already exists on PyPI!${NC}"
+        echo -e "${RED}  You must increment the version number.${NC}"
+        exit 1
+    fi
+    
+    # Check if current version is older than PyPI version
+    if printf '%s\n' "$PYPI_VERSION" "$CURRENT_VERSION" | sort -V -C; then
+        echo -e "${RED}✗ Current version ($CURRENT_VERSION) is older than PyPI version ($PYPI_VERSION)!${NC}"
+        echo -e "${RED}  New version must be greater than the published version.${NC}"
+        exit 1
+    fi
+    
+    echo -e "${GREEN}✓ No conflicts with PyPI${NC}"
+fi
+echo ""
+
+# ============================================================
+# STEP 3: Determine New Version
+# ============================================================
+echo -e "${YELLOW}[3/5] Calculating new version...${NC}"
 
 # Parse version parts
 IFS='.' read -r -a VERSION_PARTS <<< "$CURRENT_VERSION"
@@ -64,10 +171,28 @@ case $UPDATE_TYPE in
         ;;
 esac
 
-echo -e "${GREEN}New version: ${NEW_VERSION}${NC}"
+echo "  Current version: ${CURRENT_VERSION}"
+echo "  New version:     ${NEW_VERSION}"
 echo ""
 
-# Ask for confirmation
+# Verify new version is greater than current
+if ! printf '%s\n' "$CURRENT_VERSION" "$NEW_VERSION" | sort -V -C; then
+    echo -e "${RED}✗ New version ($NEW_VERSION) must be greater than current ($CURRENT_VERSION)${NC}"
+    exit 1
+fi
+
+# If PyPI version exists, verify new version is greater
+if [ "$PYPI_VERSION" != "not_found" ]; then
+    if ! printf '%s\n' "$PYPI_VERSION" "$NEW_VERSION" | sort -V -C; then
+        echo -e "${RED}✗ New version ($NEW_VERSION) must be greater than PyPI version ($PYPI_VERSION)${NC}"
+        exit 1
+    fi
+fi
+
+# ============================================================
+# STEP 4: Confirm Update
+# ============================================================
+echo -e "${YELLOW}[4/5] Confirmation required${NC}"
 read -p "Update version from $CURRENT_VERSION to $NEW_VERSION? (y/n) " -n 1 -r
 echo ""
 
@@ -75,29 +200,50 @@ if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     echo -e "${YELLOW}Cancelled.${NC}"
     exit 0
 fi
+echo ""
+
+# ============================================================
+# STEP 5: Update All Version Files
+# ============================================================
+echo -e "${YELLOW}[5/5] Updating version in all files...${NC}"
+
+# Detect OS for sed compatibility
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    SED_INPLACE="sed -i ''"
+else
+    SED_INPLACE="sed -i"
+fi
 
 # Update setup.py
-sed -i '' "s/version='[0-9.]*'/version='$NEW_VERSION'/" setup.py
+$SED_INPLACE "s/version='[0-9.]*'/version='$NEW_VERSION'/" setup.py
 echo -e "${GREEN}✓ Updated setup.py${NC}"
 
 # Update pyproject.toml
-sed -i '' "s/version = \"[0-9.]*\"/version = \"$NEW_VERSION\"/" pyproject.toml
+$SED_INPLACE "s/version = \"[0-9.]*\"/version = \"$NEW_VERSION\"/" pyproject.toml
 echo -e "${GREEN}✓ Updated pyproject.toml${NC}"
 
-# Update __init__.py if it has __version__
-if grep -q "__version__" autotrend/__init__.py 2>/dev/null; then
-    sed -i '' "s/__version__ = '[0-9.]*'/__version__ = '$NEW_VERSION'/" autotrend/__init__.py
-    echo -e "${GREEN}✓ Updated autotrend/__init__.py${NC}"
-fi
+# Update __init__.py
+$SED_INPLACE "s/__version__ = '[0-9.]*'/__version__ = '$NEW_VERSION'/" autotrend/__init__.py
+echo -e "${GREEN}✓ Updated autotrend/__init__.py${NC}"
 
 echo ""
+echo -e "${GREEN}=================================${NC}"
 echo -e "${GREEN}✓ Version updated to $NEW_VERSION${NC}"
+echo -e "${GREEN}=================================${NC}"
 echo ""
 echo -e "${YELLOW}Next steps:${NC}"
-echo "  1. Review changes: git diff"
+echo "  1. Review changes: ${BLUE}git diff${NC}"
 echo "  2. Build package:"
-echo "     rm -rf build/ dist/ *.egg-info"
-echo "     python setup.py sdist bdist_wheel"
-echo "  3. Check package: twine check dist/*"
-echo "  4. Upload: twine upload dist/*"
-echo "  5. Commit: git add . && git commit -m 'Release v$NEW_VERSION' && git tag v$NEW_VERSION"
+echo "     ${BLUE}rm -rf build/ dist/ *.egg-info${NC}"
+echo "     ${BLUE}python setup.py sdist bdist_wheel${NC}"
+echo "  3. Check package: ${BLUE}twine check dist/*${NC}"
+echo "  4. Upload to TestPyPI (optional):"
+echo "     ${BLUE}twine upload --repository testpypi dist/*${NC}"
+echo "  5. Upload to PyPI:"
+echo "     ${BLUE}twine upload dist/*${NC}"
+echo "  6. Commit and tag:"
+echo "     ${BLUE}git add .${NC}"
+echo "     ${BLUE}git commit -m 'Release v$NEW_VERSION'${NC}"
+echo "     ${BLUE}git tag v$NEW_VERSION${NC}"
+echo "     ${BLUE}git push && git push --tags${NC}"
+echo ""
