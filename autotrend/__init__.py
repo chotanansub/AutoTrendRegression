@@ -24,7 +24,7 @@ Usage Examples:
     >>> result = DecomposeLLT(window_size=10).fit_plot(sequence)
 """
 
-from .core.local_linear_trend import decompose_llt, DecomposeLLT, LLTResult
+from .core import decompose_llt, DecomposeLLT, LLTResult
 from .visualization.plot import (
     plot_error,
     plot_slope_comparison,
