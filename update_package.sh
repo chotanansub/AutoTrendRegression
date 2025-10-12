@@ -115,8 +115,11 @@ else
         exit 1
     fi
     
-    # Check if current version is older than PyPI version
-    if printf '%s\n' "$PYPI_VERSION" "$CURRENT_VERSION" | sort -V -C; then
+    # Check if current version is older than or equal to PyPI version
+    # sort -V sorts in version order, so if CURRENT comes before or equals PYPI, it's older/same
+    SORTED_FIRST=$(printf '%s\n' "$PYPI_VERSION" "$CURRENT_VERSION" | sort -V | head -n1)
+    
+    if [ "$SORTED_FIRST" = "$CURRENT_VERSION" ] && [ "$CURRENT_VERSION" != "$PYPI_VERSION" ]; then
         echo -e "${RED}✗ Current version ($CURRENT_VERSION) is older than PyPI version ($PYPI_VERSION)!${NC}"
         echo -e "${RED}  New version must be greater than the published version.${NC}"
         exit 1
