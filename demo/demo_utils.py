@@ -16,8 +16,8 @@ from dataclasses import dataclass
 from typing import Callable, Dict
 
 from autotrend import (
-    decompose_llt, 
-    plot_error, 
+    decompose_llt,
+    plot_error,
     plot_slope_comparison,
     plot_full_decomposition,
     plot_iteration_grid,
@@ -71,7 +71,7 @@ def run_single_demo(config: DemoConfig, verbose: bool = False) -> None:
     sequence = config.data_generator()
     print(f"  Sequence length: {len(sequence)}")
     
-    # Run LLT decomposition
+    # Run LLT decomposition with new API
     result = decompose_llt(
         seq=sequence,
         max_models=config.max_models,
@@ -79,7 +79,8 @@ def run_single_demo(config: DemoConfig, verbose: bool = False) -> None:
         error_percentile=config.error_percentile,
         percentile_step=config.percentile_step,
         update_threshold=config.update_threshold,
-        is_quiet=not verbose
+        is_quiet=not verbose,
+        store_sequence=True  # Store sequence for plotting
     )
     
     print(f"  Iterations: {result.get_num_iterations()}, Models: {len(result.models)}")
@@ -88,7 +89,7 @@ def run_single_demo(config: DemoConfig, verbose: bool = False) -> None:
     error_plot_path = config.get_output_path("error")
     error_plot_path.parent.mkdir(parents=True, exist_ok=True)
     
-    plot_error(sequence, result.process_logs, config.window_size)
+    result.plot_error()
     plt.savefig(error_plot_path, dpi=150, bbox_inches='tight')
     plt.close('all')
     print(f"  ✓ {error_plot_path}")
@@ -98,7 +99,7 @@ def run_single_demo(config: DemoConfig, verbose: bool = False) -> None:
         slope_plot_path = config.get_output_path("slopes")
         slope_plot_path.parent.mkdir(parents=True, exist_ok=True)
         
-        plot_slope_comparison(result.models, x_range=(-5, 5))
+        result.plot_slopes(x_range=(-5, 5))
         plt.savefig(slope_plot_path, dpi=150, bbox_inches='tight')
         plt.close('all')
         print(f"  ✓ {slope_plot_path}")
@@ -107,7 +108,7 @@ def run_single_demo(config: DemoConfig, verbose: bool = False) -> None:
     full_decomp_path = config.get_output_path("full_decomposition")
     full_decomp_path.parent.mkdir(parents=True, exist_ok=True)
     
-    plot_full_decomposition(sequence, result, figsize=(16, 10))
+    result.plot_full_decomposition(figsize=(16, 10))
     plt.savefig(full_decomp_path, dpi=150, bbox_inches='tight')
     plt.close('all')
     print(f"  ✓ {full_decomp_path}")
@@ -116,7 +117,7 @@ def run_single_demo(config: DemoConfig, verbose: bool = False) -> None:
     iteration_grid_path = config.get_output_path("iteration_grid")
     iteration_grid_path.parent.mkdir(parents=True, exist_ok=True)
     
-    plot_iteration_grid(sequence, result, figsize=(16, 12))
+    result.plot_iteration_grid(figsize=(16, 12))
     plt.savefig(iteration_grid_path, dpi=150, bbox_inches='tight')
     plt.close('all')
     print(f"  ✓ {iteration_grid_path}")
@@ -125,7 +126,7 @@ def run_single_demo(config: DemoConfig, verbose: bool = False) -> None:
     model_stats_path = config.get_output_path("model_statistics")
     model_stats_path.parent.mkdir(parents=True, exist_ok=True)
     
-    plot_model_statistics(result, figsize=(14, 8))
+    result.plot_statistics(figsize=(14, 8))
     plt.savefig(model_stats_path, dpi=150, bbox_inches='tight')
     plt.close('all')
     print(f"  ✓ {model_stats_path}")
