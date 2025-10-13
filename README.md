@@ -3,13 +3,13 @@
 [![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
+#### 🚀 Demo: [Google Colab](https://colab.research.google.com/drive/1jifMsj8nI_ZV-FL3ZScFP4wJJLQp97jH?usp=sharing)
+
 **AutoTrend** is a lightweight, iterative method for extracting local linear trends from time series data. Unlike traditional sliding window approaches that fit a model at every point, AutoTrend achieves computational efficiency by training a single linear regression model per focus region and extending the trend forward, measuring prediction errors without repeated model fitting.
 
-<p align="center">
-  <img src="assets/figures/iterative_refinement_process.gif" alt="Iterative Refinement Process" height="700">
-</p>
-
-#### 🚀 Demo: [Google Colab](https://colab.research.google.com/drive/1jifMsj8nI_ZV-FL3ZScFP4wJJLQp97jH?usp=sharing)
+<div align="center" style="margin-bottom: 40px;">
+  <img src="assets/figures/iterative_refinement_process.gif" alt="Iterative Refinement Process" height="420">
+</div>
 
 ---
 
