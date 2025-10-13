@@ -11,8 +11,7 @@
   <img src="assets/figures/iterative_refinement_process.gif" alt="Iterative Refinement Process" height="420" width="300>
 </p>
     
-
-
+<br><br>
 ---
 
 ## 📦 Installation
