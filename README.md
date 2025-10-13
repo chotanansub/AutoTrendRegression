@@ -7,11 +7,10 @@
 
 **AutoTrend** is a lightweight, iterative method for extracting local linear trends from time series data. Unlike traditional sliding window approaches that fit a model at every point, AutoTrend achieves computational efficiency by training a single linear regression model per focus region and extending the trend forward, measuring prediction errors without repeated model fitting.
 
-<p align="center">
-  <img src="assets/figures/iterative_refinement_process.gif" alt="Iterative Refinement Process" height="420" width="300>
-</p>
-    
-<br><br>
+<div align="center" style="margin-bottom: 40px;">
+  <img src="assets/figures/iterative_refinement_process.gif" alt="Iterative Refinement Process" height="420">
+</div>
+
 ---
 
 ## 📦 Installation
