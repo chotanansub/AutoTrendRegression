@@ -6,6 +6,7 @@ Main exports:
 - DecomposeLLT: Object-based API for LLT decomposition (scikit-learn style)
 - LLTResult: Result dataclass with trend and prediction marks
 - Plotting functions: plot_error, plot_slope_comparison, plot_full_decomposition, etc.
+- Animation functions: animate_error_threshold
 - Data generators: generate_simple_wave, generate_nonstationary_wave, generate_piecewise_linear
 
 Usage Examples:
@@ -22,6 +23,10 @@ Usage Examples:
     
     # Option C: Convenience wrapper
     >>> result = DecomposeLLT(window_size=10).fit_plot(sequence)
+    
+    # Option D: Animation
+    >>> from autotrend import animate_error_threshold
+    >>> animate_error_threshold(result, output_path='animation.gif')
 """
 
 from .core import decompose_llt, DecomposeLLT, LLTResult
@@ -32,13 +37,14 @@ from .visualization.plot import (
     plot_iteration_grid,
     plot_model_statistics
 )
+from .visualization.animate_error_threshold import animate_error_threshold
 from .data import (
     generate_simple_wave,
     generate_nonstationary_wave,
     generate_piecewise_linear
 )
 
-__version__ = '0.2.1'
+__version__ = '0.2.2'
 
 __all__ = [
     # Core algorithm
@@ -52,6 +58,9 @@ __all__ = [
     'plot_full_decomposition',
     'plot_iteration_grid',
     'plot_model_statistics',
+    
+    # Animation functions
+    'animate_error_threshold',
     
     # Data generators
     'generate_simple_wave',
