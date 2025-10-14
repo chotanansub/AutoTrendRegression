@@ -8,7 +8,7 @@ with open(os.path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='autotrend',
-    version='0.2.2',
+    version='0.2.3',
     author='Chotanansub Sophaken',
     author_email='chotanansub.s@gmail.com',
     description='Local Linear Trend Extraction for Time Series',

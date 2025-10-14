@@ -44,7 +44,7 @@ from .data import (
     generate_piecewise_linear
 )
 
-__version__ = '0.2.2'
+__version__ = '0.2.3'
 
 __all__ = [
     # Core algorithm
