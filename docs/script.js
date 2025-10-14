@@ -42,6 +42,48 @@ function updateActiveNavLink() {
 window.addEventListener('scroll', updateActiveNavLink);
 window.addEventListener('load', updateActiveNavLink);
 
+// Copy functionality for installation box
+document.addEventListener('DOMContentLoaded', () => {
+    const installCopyBtn = document.querySelector('.install-copy-btn');
+    
+    if (installCopyBtn) {
+        installCopyBtn.addEventListener('click', () => {
+            const command = 'pip install autotrend';
+            
+            navigator.clipboard.writeText(command).then(() => {
+                // Change icon to checkmark
+                installCopyBtn.innerHTML = '<i class="fas fa-check"></i>';
+                installCopyBtn.classList.add('copied');
+                
+                // Reset after 2 seconds
+                setTimeout(() => {
+                    installCopyBtn.innerHTML = '<i class="fas fa-copy"></i>';
+                    installCopyBtn.classList.remove('copied');
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = command;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    installCopyBtn.innerHTML = '<i class="fas fa-check"></i>';
+                    installCopyBtn.classList.add('copied');
+                    setTimeout(() => {
+                        installCopyBtn.innerHTML = '<i class="fas fa-copy"></i>';
+                        installCopyBtn.classList.remove('copied');
+                    }, 2000);
+                } catch (err) {
+                    console.error('Fallback copy failed:', err);
+                }
+                document.body.removeChild(textArea);
+            });
+        });
+    }
+});
+
 // Copy code block functionality
 document.querySelectorAll('pre code').forEach(block => {
     const pre = block.parentElement;
@@ -232,7 +274,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// Mobile menu toggle (for future enhancement)
+// Mobile menu toggle
 const createMobileMenu = () => {
     const nav = document.querySelector('.navbar');
     const navLinks = document.querySelector('.nav-links');
