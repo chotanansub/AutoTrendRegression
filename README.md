@@ -1,7 +1,15 @@
 # 📈 AutoTrend: Local Linear Trend Extraction for Time Series
 
-[![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+<div align="center" style="margin-bottom: 40px;">
+  <img src="assets/figures/autotrend_logo.png" alt="Iterative Refinement Process" height="200">
+</div>
+
+
+<div align="center">
+        <img src="https://img.shields.io/badge/python-3.8%2B-blue?style=flat-square" alt="Python 3.8+" >
+        <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT License" >
+        <img src="https://img.shields.io/pypi/v/autotrend?style=flat-square" alt="PyPI version" >
+</div>
 
 #### 🚀 Demo: [Google Colab](https://colab.research.google.com/drive/1jifMsj8nI_ZV-FL3ZScFP4wJJLQp97jH?usp=sharing)
 
