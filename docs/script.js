@@ -42,80 +42,167 @@ function updateActiveNavLink() {
 window.addEventListener('scroll', updateActiveNavLink);
 window.addEventListener('load', updateActiveNavLink);
 
-// Copy functionality for installation box
-document.addEventListener('DOMContentLoaded', () => {
+// Copy functionality for installation box - IMPROVED VERSION
+function initializeInstallCopyButton() {
     const installCopyBtn = document.querySelector('.install-copy-btn');
     
-    if (installCopyBtn) {
-        installCopyBtn.addEventListener('click', () => {
-            const command = 'pip install autotrend';
-            
+    if (!installCopyBtn) {
+        console.log('Install copy button not found');
+        return;
+    }
+    
+    installCopyBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const command = 'pip install autotrend';
+        
+        // Try modern clipboard API first
+        if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(command).then(() => {
-                // Change icon to checkmark
+                // Success
                 installCopyBtn.innerHTML = '<i class="fas fa-check"></i>';
                 installCopyBtn.classList.add('copied');
                 
-                // Reset after 2 seconds
                 setTimeout(() => {
                     installCopyBtn.innerHTML = '<i class="fas fa-copy"></i>';
                     installCopyBtn.classList.remove('copied');
                 }, 2000);
             }).catch(err => {
-                console.error('Failed to copy:', err);
-                // Fallback for older browsers
-                const textArea = document.createElement('textarea');
-                textArea.value = command;
-                document.body.appendChild(textArea);
-                textArea.select();
-                try {
-                    document.execCommand('copy');
-                    installCopyBtn.innerHTML = '<i class="fas fa-check"></i>';
-                    installCopyBtn.classList.add('copied');
-                    setTimeout(() => {
-                        installCopyBtn.innerHTML = '<i class="fas fa-copy"></i>';
-                        installCopyBtn.classList.remove('copied');
-                    }, 2000);
-                } catch (err) {
-                    console.error('Fallback copy failed:', err);
-                }
-                document.body.removeChild(textArea);
+                console.error('Clipboard API failed:', err);
+                fallbackCopy(command, installCopyBtn);
             });
-        });
-    }
-});
+        } else {
+            // Use fallback for browsers without Clipboard API
+            fallbackCopy(command, installCopyBtn);
+        }
+    });
+}
 
-// Copy code block functionality
-document.querySelectorAll('pre code').forEach(block => {
-    const pre = block.parentElement;
+// Fallback copy method for older browsers or when Clipboard API fails
+function fallbackCopy(text, button) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.top = '0';
+    textArea.style.left = '0';
+    textArea.style.width = '2em';
+    textArea.style.height = '2em';
+    textArea.style.padding = '0';
+    textArea.style.border = 'none';
+    textArea.style.outline = 'none';
+    textArea.style.boxShadow = 'none';
+    textArea.style.background = 'transparent';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
     
-    // Create copy button
-    const copyButton = document.createElement('button');
-    copyButton.className = 'copy-button';
-    copyButton.innerHTML = '<i class="fas fa-copy"></i>';
-    copyButton.title = 'Copy to clipboard';
-    
-    // Add button to pre element
-    pre.style.position = 'relative';
-    pre.appendChild(copyButton);
-    
-    // Copy functionality
-    copyButton.addEventListener('click', () => {
-        const code = block.textContent;
-        navigator.clipboard.writeText(code).then(() => {
-            copyButton.innerHTML = '<i class="fas fa-check"></i>';
-            copyButton.style.color = '#10b981';
-            
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+            button.innerHTML = '<i class="fas fa-check"></i>';
+            button.classList.add('copied');
             setTimeout(() => {
-                copyButton.innerHTML = '<i class="fas fa-copy"></i>';
-                copyButton.style.color = '';
+                button.innerHTML = '<i class="fas fa-copy"></i>';
+                button.classList.remove('copied');
             }, 2000);
-        }).catch(err => {
-            console.error('Failed to copy:', err);
+        } else {
+            console.error('Fallback copy failed');
+            alert('Copy failed. Please copy manually: ' + text);
+        }
+    } catch (err) {
+        console.error('Fallback copy error:', err);
+        alert('Copy failed. Please copy manually: ' + text);
+    }
+    
+    document.body.removeChild(textArea);
+}
+
+// Initialize install copy button when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeInstallCopyButton);
+} else {
+    initializeInstallCopyButton();
+}
+
+// Copy code block functionality - IMPROVED VERSION
+function initializeCodeBlockCopy() {
+    document.querySelectorAll('pre code').forEach(block => {
+        const pre = block.parentElement;
+        
+        // Check if button already exists
+        if (pre.querySelector('.copy-button')) {
+            return;
+        }
+        
+        // Create copy button
+        const copyButton = document.createElement('button');
+        copyButton.className = 'copy-button';
+        copyButton.innerHTML = '<i class="fas fa-copy"></i>';
+        copyButton.title = 'Copy to clipboard';
+        
+        // Add button to pre element
+        pre.style.position = 'relative';
+        pre.appendChild(copyButton);
+        
+        // Copy functionality
+        copyButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            const code = block.textContent;
+            
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(code).then(() => {
+                    copyButton.innerHTML = '<i class="fas fa-check"></i>';
+                    copyButton.style.color = '#10b981';
+                    
+                    setTimeout(() => {
+                        copyButton.innerHTML = '<i class="fas fa-copy"></i>';
+                        copyButton.style.color = '';
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Code copy failed:', err);
+                    fallbackCopyCode(code, copyButton);
+                });
+            } else {
+                fallbackCopyCode(code, copyButton);
+            }
         });
     });
-});
+}
 
-// Add CSS for copy button dynamically
+function fallbackCopyCode(code, button) {
+    const textArea = document.createElement('textarea');
+    textArea.value = code;
+    textArea.style.position = 'fixed';
+    textArea.style.top = '0';
+    textArea.style.left = '0';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+            button.innerHTML = '<i class="fas fa-check"></i>';
+            button.style.color = '#10b981';
+            setTimeout(() => {
+                button.innerHTML = '<i class="fas fa-copy"></i>';
+                button.style.color = '';
+            }, 2000);
+        }
+    } catch (err) {
+        console.error('Fallback code copy failed:', err);
+    }
+    
+    document.body.removeChild(textArea);
+}
+
+// Initialize code block copy when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeCodeBlockCopy);
+} else {
+    initializeCodeBlockCopy();
+}
+
+// Add CSS for copy buttons dynamically
 const style = document.createElement('style');
 style.textContent = `
     pre {
@@ -135,6 +222,7 @@ style.textContent = `
         font-size: 0.9rem;
         transition: all 0.3s;
         opacity: 0;
+        z-index: 10;
     }
     
     pre:hover .copy-button {
@@ -152,27 +240,38 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-// Lazy load images
+// Lazy load images - FIXED VERSION (exclude badges)
 document.addEventListener('DOMContentLoaded', () => {
-    const images = document.querySelectorAll('img[src]');
+    // Only lazy load large images, not badges
+    const images = document.querySelectorAll('img[src]:not(.badges img)');
+    const demoGif = document.querySelector('.demo-gif');
     
     const imageObserver = new IntersectionObserver((entries, observer) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
                 const img = entry.target;
-                img.style.opacity = '0';
-                img.style.transition = 'opacity 0.5s';
                 
-                img.addEventListener('load', () => {
+                // Don't apply fade animation if already loaded
+                if (!img.complete) {
+                    img.style.opacity = '0';
+                    img.style.transition = 'opacity 0.5s';
+                    
+                    img.addEventListener('load', () => {
+                        img.style.opacity = '1';
+                    });
+                } else {
                     img.style.opacity = '1';
-                });
+                }
                 
                 observer.unobserve(img);
             }
         });
     });
     
-    images.forEach(img => imageObserver.observe(img));
+    // Only observe the demo GIF, not the badges
+    if (demoGif) {
+        imageObserver.observe(demoGif);
+    }
 });
 
 // Back to top button
@@ -247,7 +346,7 @@ backToTopButton.addEventListener('click', () => {
     });
 });
 
-// Add animation on scroll
+// Add animation on scroll - EXCLUDE HERO SECTION
 const observerOptions = {
     threshold: 0.1,
     rootMargin: '0px 0px -50px 0px'
@@ -262,7 +361,7 @@ const observer = new IntersectionObserver((entries) => {
     });
 }, observerOptions);
 
-// Observe elements for animation
+// Observe elements for animation - EXCLUDE elements in hero section
 document.addEventListener('DOMContentLoaded', () => {
     const animatedElements = document.querySelectorAll('.feature-card, .doc-section');
     
