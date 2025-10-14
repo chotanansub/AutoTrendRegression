@@ -135,9 +135,6 @@ Thumbs.db
 
 # Project specific
 output/
-*.png
-*.jpg
-*.pdf
 demo/output/
 
 # Environment variables and secrets
