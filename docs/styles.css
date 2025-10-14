@@ -63,6 +63,13 @@ body {
     font-size: 1.8rem;
 }
 
+/* Logo styling */
+.nav-logo {
+    height: 32px;
+    width: auto;
+    object-fit: contain;
+}
+
 .nav-links {
     display: flex;
     list-style: none;
