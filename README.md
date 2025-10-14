@@ -1,4 +1,4 @@
-# 📈 AutoTrend: Local Linear Trend Extraction
+# 📈 AutoTrend: Local Linear Trend Extraction for Time Series
 
 [![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
