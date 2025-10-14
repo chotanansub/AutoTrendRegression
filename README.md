@@ -1,7 +1,7 @@
 # 📈 AutoTrend: Local Linear Trend Extraction for Time Series
 
 <div align="center" style="margin-bottom: 40px;">
-  <img src="assets/figures/autotrend_logo.png" alt="Iterative Refinement Process" height="200">
+  <img src="https://github.com/chotanansub/AutoTrend/blob/main/assets/figures/autotrend_logo.png?raw=true" alt="AutoTrend Logo" height="200">
 </div>
 
 
