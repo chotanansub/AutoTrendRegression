@@ -1,0 +1,50 @@
+# GitHub Pages Configuration for AutoTrend
+
+# Theme
+theme: jekyll-theme-cayman
+
+# Site settings
+title: AutoTrend
+description: Local Linear Trend Extraction for Time Series
+author: Chotanansub Sophaken
+email: chotanansub.s@gmail.com
+
+# Repository
+repository: chotanansub/autotrend
+github_username: chotanansub
+
+# Build settings
+markdown: kramdown
+highlighter: rouge
+
+# Exclude files from build
+exclude:
+  - README.md
+  - LICENSE
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor
+
+# Include files
+include:
+  - _config.yml
+
+# Plugins
+plugins:
+  - jekyll-seo-tag
+  - jekyll-sitemap
+
+# SEO
+lang: en_US
+logo: /assets/logo.png
+
+# Social
+social:
+  name: Chotanansub Sophaken
+  links:
+    - https://github.com/chotanansub/autotrend
+    
+# Additional metadata
+url: https://chotanansub.github.io
+baseurl: /autotrend

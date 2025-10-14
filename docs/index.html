@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoTrend - Local Linear Trend Extraction</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <i class="fas fa-chart-line"></i>
+                <span>AutoTrend</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#home" class="active">Home</a></li>
+                <li><a href="#documentation">Documentation</a></li>
+                <li><a href="https://github.com/chotanansub/autotrend" target="_blank">
+                    <i class="fab fa-github"></i> GitHub
+                </a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Home Section -->
+    <section id="home" class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1>AutoTrend</h1>
+                <p class="tagline">Local Linear Trend Extraction for Time Series</p>
+                <p class="description">
+                    A lightweight, iterative method for extracting local linear trends from time series data with computational efficiency and automatic trend boundary discovery.
+                </p>
+                <div class="hero-buttons">
+                    <a href="#documentation" class="btn btn-primary">Get Started</a>
+                    <a href="https://colab.research.google.com/drive/1jifMsj8nI_ZV-FL3ZScFP4wJJLQp97jH?usp=sharing" 
+                       target="_blank" class="btn btn-secondary">
+                        <i class="fas fa-play"></i> Try Demo
+                    </a>
+                </div>
+                <div class="badges">
+                    <img src="https://img.shields.io/badge/python-3.8+-blue.svg" alt="Python">
+                    <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License">
+                    <img src="https://img.shields.io/pypi/v/autotrend.svg" alt="PyPI">
+                </div>
+            </div>
+            <div class="hero-visual">
+                <img src="https://github.com/chotanansub/autotrend/blob/main/assets/figures/iterative_refinement_process.gif?raw=true" 
+                     alt="AutoTrend Demo" class="demo-gif">
+            </div>
+        </div>
+    </section>
+
+    <section class="features">
+        <div class="container">
+            <h2>Key Features</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <h3>Computationally Efficient</h3>
+                    <p>Minimal model training compared to full sliding windows</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-magic"></i>
+                    <h3>Adaptive</h3>
+                    <p>Automatically discovers trend boundaries without predefined change points</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-eye"></i>
+                    <h3>Interpretable</h3>
+                    <p>Clear linear segments with explicit slopes and intercepts</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-sliders-h"></i>
+                    <h3>Flexible</h3>
+                    <p>Adjustable error thresholds and iteration limits</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Documentation Section -->
+    <section id="documentation" class="documentation">
+        <div class="container">
+            <h2>Documentation</h2>
+            
+            <div class="doc-section">
+                <h3><i class="fas fa-download"></i> Installation</h3>
+                <pre><code>pip install autotrend</code></pre>
+                <p>Or install from source:</p>
+                <pre><code>git clone https://github.com/chotanansub/autotrend.git
+cd autotrend
+pip install -e .</code></pre>
+            </div>
+
+            <div class="doc-section">
+                <h3><i class="fas fa-rocket"></i> Quick Start</h3>
+                <pre><code>import numpy as np
+from autotrend import decompose_llt
+
+# Generate or load your time series
+sequence = np.sin(np.linspace(0, 50, 500)) + np.linspace(0, 5, 500)
+
+# Run LLT decomposition
+result = decompose_llt(
+    seq=sequence,
+    max_models=5,
+    window_size=10,
+    error_percentile=40
+)
+
+# Visualize results
+result.plot_full_decomposition()
+
+# Access results
+print(f"Number of iterations: {result.get_num_iterations()}")
+print(f"Trend segments: {result.get_trend_segments()}")</code></pre>
+            </div>
+
+            <div class="doc-section">
+                <h3><i class="fas fa-cogs"></i> Core Concept</h3>
+                <p><strong>The Problem:</strong> Traditional sliding window regression methods fit a new model at every time point, leading to high computational costs.</p>
+                <p><strong>The Solution:</strong> AutoTrend uses an iterative, focus-based approach:</p>
+                <ol>
+                    <li><strong>Single Model per Region:</strong> Train one linear regression model at the start of each focus region</li>
+                    <li><strong>Trend Extension:</strong> Extend the trend line forward without retraining</li>
+                    <li><strong>Error-Based Refinement:</strong> Identify high-error points and focus on them in the next iteration</li>
+                    <li><strong>Adaptive Segmentation:</strong> Automatically discover trend boundaries based on prediction error</li>
+                </ol>
+            </div>
+
+            <div class="doc-section">
+                <h3><i class="fas fa-code"></i> API Reference</h3>
+                
+                <h4>Functional API</h4>
+                <pre><code>from autotrend import decompose_llt
+
+result = decompose_llt(
+    seq,                    # 1D input sequence
+    max_models=10,          # Maximum number of iterations
+    window_size=5,          # Length of training window
+    error_percentile=40,    # Error threshold percentile
+    percentile_step=0,      # Increment per iteration
+    update_threshold=False, # Update threshold each iteration
+    verbose=2,              # Verbosity level (0-2)
+    store_sequence=True     # Store sequence for plotting
+)</code></pre>
+
+                <h4>Object-based API</h4>
+                <pre><code>from autotrend import DecomposeLLT
+
+# Create decomposer with custom parameters
+decomposer = DecomposeLLT(
+    max_models=10,
+    window_size=20,
+    error_percentile=40,
+    update_threshold=True,
+    percentile_step=2
+)
+
+# Fit to sequence
+result = decomposer.fit(sequence)
+
+# Or fit and plot in one call
+result = decomposer.fit_plot(
+    sequence,
+    plot_types=['full_decomposition'],
+    show=True
+)</code></pre>
+
+                <h4>Result Object</h4>
+                <pre><code># Access components
+trends = result.trend_marks        # Iteration labels for each point
+predictions = result.prediction_marks  # Predicted values
+models = result.models             # LinearRegression models
+
+# Get summary information
+n_iterations = result.get_num_iterations()
+segments = result.get_trend_segments()
+indices, preds = result.get_predictions_by_iteration(iteration=1)
+
+# Plotting methods
+result.plot_error()
+result.plot_slopes()
+result.plot_full_decomposition()
+result.plot_iteration_grid()
+result.plot_statistics()
+result.plot_all(output_dir="results/")</code></pre>
+            </div>
+
+            <div class="doc-section">
+                <h3><i class="fas fa-chart-bar"></i> Visualization</h3>
+                <p>AutoTrend provides comprehensive visualization tools:</p>
+                <ul>
+                    <li><strong>Error Analysis:</strong> Shows the iterative process with error bars</li>
+                    <li><strong>Slope Comparison:</strong> Compares slopes across models with multiple views</li>
+                    <li><strong>Full Decomposition:</strong> 3-panel view with predictions, trends, and residuals</li>
+                    <li><strong>Iteration Grid:</strong> Individual subplots for each iteration</li>
+                    <li><strong>Model Statistics:</strong> Summary of segment lengths, slopes, and coverage</li>
+                    <li><strong>Animation:</strong> Animated view of the iterative refinement process</li>
+                </ul>
+                <pre><code># Generate animation
+from autotrend import animate_error_threshold
+
+animate_error_threshold(
+    result,
+    output_path='animation.gif',
+    sliding_mode=True,
+    fps=5
+)</code></pre>
+            </div>
+
+            <div class="doc-section">
+                <h3><i class="fas fa-database"></i> Data Generators</h3>
+                <p>Built-in synthetic data generators for testing:</p>
+                <pre><code>from autotrend import (
+    generate_simple_wave,
+    generate_nonstationary_wave,
+    generate_piecewise_linear
+)
+
+# Simple sine wave
+wave = generate_simple_wave(
+    length=500,
+    frequency=5.0,
+    add_noise=True
+)
+
+# Non-stationary wave with amplitude modulation
+nonstat = generate_nonstationary_wave(
+    add_noise=True,
+    noise_strength=2
+)
+
+# Piecewise linear segments
+piecewise = generate_piecewise_linear(
+    trends=['increase', 'decrease', 'steady'],
+    total_length=300,
+    min_seg_len=50,
+    max_seg_len=150
+)</code></pre>
+            </div>
+
+            <div class="doc-section">
+                <h3><i class="fas fa-question-circle"></i> Parameters Guide</h3>
+                <table class="params-table">
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Description</th>
+                        <th>Default</th>
+                    </tr>
+                    <tr>
+                        <td><code>window_size</code></td>
+                        <td>Size of training window. Smaller values capture finer trends.</td>
+                        <td>5</td>
+                    </tr>
+                    <tr>
+                        <td><code>max_models</code></td>
+                        <td>Maximum iterations. More iterations allow finer refinement.</td>
+                        <td>10</td>
+                    </tr>
+                    <tr>
+                        <td><code>error_percentile</code></td>
+                        <td>Threshold percentile (0-100). Lower values are more strict.</td>
+                        <td>40</td>
+                    </tr>
+                    <tr>
+                        <td><code>percentile_step</code></td>
+                        <td>Increment per iteration. Enables adaptive thresholding.</td>
+                        <td>0</td>
+                    </tr>
+                    <tr>
+                        <td><code>update_threshold</code></td>
+                        <td>Whether to update threshold each iteration.</td>
+                        <td>False</td>
+                    </tr>
+                    <tr>
+                        <td><code>verbose</code></td>
+                        <td>Verbosity level: 0 (silent), 1 (progress), 2 (detailed).</td>
+                        <td>2</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="doc-section">
+                <h3><i class="fas fa-flask"></i> Examples</h3>
+                <p>See the <a href="https://github.com/chotanansub/autotrend/tree/main/examples" target="_blank">examples directory</a> for complete usage examples:</p>
+                <ul>
+                    <li><code>01_quick_start.py</code> - Minimal example</li>
+                    <li><code>02_basic_usage.py</code> - API patterns and customization</li>
+                </ul>
+                <p>Run demos:</p>
+                <pre><code>python demo/run_all.py</code></pre>
+            </div>
+
+            <div class="doc-section">
+                <h3><i class="fas fa-book"></i> Algorithm Details</h3>
+                <p>For detailed algorithm description, see the <a href="https://github.com/chotanansub/autotrend#readme" target="_blank">full README</a>.</p>
+                <p><strong>Key Steps:</strong></p>
+                <ol>
+                    <li>Initialize focus targets covering all predictable points</li>
+                    <li>Train linear model on first window of focus region</li>
+                    <li>Extend trend and measure prediction errors</li>
+                    <li>Segment points by error threshold</li>
+                    <li>Iterate on high-error regions until convergence</li>
+                </ol>
+            </div>
+
+            <div class="doc-section">
+                <h3><i class="fas fa-hands-helping"></i> Contributing</h3>
+                <p>Contributions are welcome! Please see our <a href="https://github.com/chotanansub/autotrend/issues" target="_blank">GitHub issues</a> page.</p>
+            </div>
+
+            <div class="doc-section">
+                <h3><i class="fas fa-file-alt"></i> License</h3>
+                <p>AutoTrend is released under the MIT License. See <a href="https://github.com/chotanansub/autotrend/blob/main/LICENSE" target="_blank">LICENSE</a> for details.</p>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 AutoTrend. Created by Chotanansub Sophaken.</p>
+            <div class="footer-links">
+                <a href="https://github.com/chotanansub/autotrend"><i class="fab fa-github"></i></a>
+                <a href="mailto:chotanansub.s@gmail.com"><i class="fas fa-envelope"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
